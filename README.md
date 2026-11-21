@@ -1,4 +1,4 @@
-# Mail Scanner
+# MailTag
 
 Electron tray app. Starts with your PC, checks your inbox over IMAP every N minutes,
 and shows a notification for new unread mail. Clicking the app in your app drawer /
@@ -14,7 +14,7 @@ Start menu opens the settings window.
     npm run dist
 
 Output is in `dist/`:
-- Windows: `Mail Scanner Setup x.y.z.exe`, which installs and adds a Start menu shortcut
+- Windows: `MailTag Setup x.y.z.exe`, which installs and adds a Start menu shortcut
 - Linux: `.deb` (adds a launcher entry) and `.AppImage`
 - macOS: `.dmg` (drag to Applications). Build on a Mac.
 

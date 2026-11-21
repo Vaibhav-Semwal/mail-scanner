@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Mail Scanner</title>
+  <link rel="stylesheet" href="styles.css">
+  <script src="renderer.js" defer></script>
+</head>
+<body>
+  <main>
+    <header>
+      <h1>Mail Scanner</h1>
+      <p class="lede">Checks your inbox in the background and tells you about new mail.</p>
+    </header>
+
+    <section aria-labelledby="h-inbox">
+      <div class="section-head">
+        <h2 id="h-inbox">Inbox</h2>
+        <button id="openInbox" class="link" type="button" hidden>Open Gmail</button>
+      </div>
+      <div class="summary">
+        <span><strong id="count">0</strong> unread</span>
+        <span id="status" class="muted"></span>
+      </div>
+      <ul id="results" class="mail-list"></ul>
+      <p id="empty" class="muted empty">Nothing to show yet.</p>
+    </section>
+
+    <section aria-labelledby="h-account">
+      <h2 id="h-account">Account</h2>
+      <label class="field">Email address
+        <input id="email" type="email" autocomplete="off" placeholder="you@gmail.com">
+      </label>
+      <label class="field">App password
+        <input id="password" type="password" autocomplete="off" placeholder="App password">
+        <small>Create one in your email provider's security settings. Your normal password will not work with most providers.</small>
+      </label>
+      <div class="row">
+        <label class="field">IMAP server
+          <input id="host" type="text" placeholder="Detected from your address">
+        </label>
+        <label class="field">Port
+          <input id="port" type="number" min="1" max="65535">
+        </label>
+      </div>
+    </section>
+
+    <section aria-labelledby="h-scanning">
+      <h2 id="h-scanning">Scanning</h2>
+      <label class="field">Refresh the list every (minutes)
+        <input id="interval" type="number" min="1" max="1440">
+        <small>New mail is pushed to you instantly. This only refreshes the unread list as a safety net.</small>
+      </label>
+      <label class="field">Only alert for these words
+        <input id="keywords" type="text" placeholder="invoice, interview, security alert">
+        <small>Separate with commas. Matches the sender and subject. Leave empty to be alerted about all new mail.</small>
+      </label>
+      <label class="check"><input id="notify" type="checkbox"> Show desktop notifications</label>
+      <label class="check"><input id="launch" type="checkbox"> Start when I sign in to my computer</label>
+    </section>
+
+    <div class="actions">
+      <button id="save" class="primary" type="button">Save settings</button>
+      <button id="test" type="button">Test connection</button>
+      <button id="scan" type="button">Scan now</button>
+    </div>
+    <div id="msg" class="feedback" role="status"></div>
+  </main>
+</body>
+</html>

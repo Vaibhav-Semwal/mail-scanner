@@ -26,7 +26,7 @@ function create() {
     minHeight: 500,
     show: false,
     title: 'MailTag',
-    icon: path.join(ROOT, 'assets', 'icon.png'),
+    icon: path.join(ROOT, 'assets', 'favicon.ico'),
     autoHideMenuBar: true,
     webPreferences: {
       preload: path.join(ROOT, 'preload.js'),

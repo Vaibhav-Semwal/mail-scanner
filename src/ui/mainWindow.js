@@ -25,7 +25,7 @@ function create() {
     minWidth: 420,
     minHeight: 500,
     show: false,
-    title: 'Mail Scanner',
+    title: 'MailTag',
     icon: path.join(ROOT, 'assets', 'icon.png'),
     autoHideMenuBar: true,
     webPreferences: {

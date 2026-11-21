@@ -16,7 +16,7 @@ function apply(enabled) {
       const exe = process.env.APPIMAGE || process.execPath;
       fs.writeFileSync(
         file,
-        `[Desktop Entry]\nType=Application\nName=Mail Scanner\nExec="${exe}" --hidden\nX-GNOME-Autostart-enabled=true\n`
+        `[Desktop Entry]\nType=Application\nName=MailTag\nExec="${exe}" --hidden\nX-GNOME-Autostart-enabled=true\n`
       );
     } else {
       fs.rmSync(file, { force: true });

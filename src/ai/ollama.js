@@ -3,7 +3,7 @@ const fs = require('fs');
 const path = require('path');
 const log = require('../logger');
 
-// Mail Scanner runs its own Ollama server instead of using the one you may
+// MailTag runs its own Ollama server instead of using the one you may
 // already have. That way the models it downloads always go to the folder in
 // its settings (OLLAMA_MODELS), and your normal Ollama setup is left alone.
 const HOST = '127.0.0.1:11435';

@@ -1,7 +1,7 @@
 {
   "name": "mail-scanner",
   "version": "1.0.0",
-  "description": "Background mail scanner that starts with your PC and checks your inbox over IMAP.",
+  "description": "MailTag: watches your inbox, labels mail with a local AI and alerts you to new email.",
   "main": "main.js",
   "author": "You",
   "license": "MIT",
@@ -20,10 +20,10 @@
   },
   "build": {
     "appId": "com.local.mailscanner",
-    "productName": "Mail Scanner",
+    "productName": "MailTag",
     "protocols": [
       {
-        "name": "Mail Scanner",
+        "name": "MailTag",
         "schemes": [
           "mail-scanner"
         ]
@@ -45,8 +45,9 @@
     "nsis": {
       "oneClick": true,
       "createStartMenuShortcut": true,
-      "createDesktopShortcut": false,
-      "runAfterFinish": true
+      "createDesktopShortcut": true,
+      "runAfterFinish": true,
+      "shortcutName": "MailTag"
     },
     "mac": {
       "target": "dmg",

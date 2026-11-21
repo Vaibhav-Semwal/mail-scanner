@@ -1,4 +1,9 @@
 const { app, powerMonitor, shell, protocol } = require('electron');
+const path = require('path');
+
+// One data folder for the dev and installed builds (settings, saved password,
+// labels, log), whatever the app is called. Must run before anything reads it.
+app.setPath('userData', path.join(app.getPath('appData'), 'mail-scanner'));
 const config = require('./src/config');
 const session = require('./src/session');
 const autostart = require('./src/system/autostart');
@@ -89,7 +94,7 @@ async function start() {
   session.onChange((s, meta) => {
     if (s.results !== classifier.items) classifier.setItems(s.results); // list changed
     if (!meta.silent) mainWindow.send('state', s);
-    tray.setToolTip(`Mail Scanner: ${s.status}${s.unreadCount ? `, ${s.unreadCount} unread` : ''}`);
+    tray.setToolTip(`MailTag: ${s.status}${s.unreadCount ? `, ${s.unreadCount} unread` : ''}`);
   });
   app.on('will-quit', () => {
     classifier.stop(); // stops the private Ollama server

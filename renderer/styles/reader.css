@@ -1,0 +1,82 @@
+/* ---------- Reader ---------- */
+.reader-pane { flex-direction: column; background: var(--panel); overflow: hidden; }
+
+.toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 2px;
+  flex: none;
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--line);
+}
+
+/* Narrow reader: icons only. */
+@media (max-width: 900px) {
+  .toolbar .tool-label { display: none; }
+  .toolbar button.tool { padding: 7px; }
+}
+
+.message {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-height: 0;
+  padding: 18px 24px 0;
+}
+
+.message .subject {
+  margin: 0 0 16px 52px;
+  font-size: 22px;
+  font-weight: 450;
+  line-height: 1.3;
+  overflow-wrap: anywhere;
+}
+
+.sender { display: flex; align-items: flex-start; gap: 12px; margin-bottom: 14px; }
+.who { flex: 1 1 auto; min-width: 0; }
+.who-line { display: flex; flex-wrap: wrap; gap: 0 6px; align-items: baseline; }
+#rTo { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sender time { flex: none; padding-top: 2px; white-space: nowrap; }
+
+.attachments { display: flex; flex-wrap: wrap; gap: 6px; margin: 0 0 14px 52px; padding: 0; list-style: none; }
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  max-width: 100%;
+  padding: 4px 12px 4px 8px;
+  font-size: 12px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+}
+.chip .icon { width: 16px; height: 16px; color: var(--muted); }
+.chip-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.chip-size { flex: none; color: var(--muted); }
+
+.loading { display: flex; align-items: center; gap: 8px; margin-left: 52px; color: var(--muted); }
+
+.reader-error {
+  margin: 0 0 12px 52px;
+  padding: 10px 14px;
+  color: var(--bad);
+  background: var(--bad-soft);
+  border-radius: var(--radius);
+}
+
+/* Email HTML assumes a white page, as it does in Gmail. The frame scrolls itself. */
+.body-frame {
+  flex: 1 1 auto;
+  width: 100%;
+  min-height: 200px;
+  margin-bottom: 16px;
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  color-scheme: light; /* never inherit the app's dark scheme (white default text) */
+}
+
+@media (max-width: 560px) {
+  .message { padding: 14px 14px 0; }
+  .message .subject, .attachments, .loading, .reader-error { margin-left: 0; }
+}

@@ -11,10 +11,14 @@ function toItem(msg) {
   return {
     uid: msg.uid,
     messageId: envelope.messageId || '',
+    threadId: msg.threadId ? String(msg.threadId) : '', // Gmail: X-GM-THRID (decimal)
+    emailId: msg.emailId ? String(msg.emailId) : '',    // Gmail: X-GM-MSGID (decimal)
     from: clip(senderOf(envelope.from), 80),
+    fromAddress: String(((envelope.from || [])[0] || {}).address || '').toLowerCase(),
     subject: clip(envelope.subject || '(no subject)', 140),
     date: +new Date(msg.internalDate || Date.now()),
-    seen: msg.flags ? msg.flags.has('\\Seen') : false
+    seen: msg.flags ? msg.flags.has('\\Seen') : false,
+    starred: msg.flags ? msg.flags.has('\\Flagged') : false // Gmail's star
   };
 }
 

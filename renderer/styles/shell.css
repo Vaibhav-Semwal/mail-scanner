@@ -1,0 +1,98 @@
+/* App frame: top bar + workspace. The workspace layout follows #app[data-view]. */
+.app { display: flex; flex-direction: column; height: 100vh; }
+
+/* ---------- Top bar ---------- */
+.topbar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex: none;
+  height: 54px;
+  padding: 0 10px 0 8px;
+  background: var(--panel);
+  border-bottom: 1px solid var(--line);
+}
+
+button.brand {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px 6px 6px;
+  background: none;
+  border: 0;
+  border-radius: 20px;
+}
+.brand-mark { display: grid; place-items: center; width: 30px; height: 30px; color: var(--accent-ink); background: var(--accent); border-radius: 8px; }
+.brand-mark .icon { width: 18px; height: 18px; }
+.brand-name { font-size: 15px; font-weight: 650; }
+
+.status-pill {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  max-width: 44vw;
+  padding: 3px 10px;
+  overflow: hidden;
+  color: var(--muted);
+  font-size: 12px;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+}
+.status-pill span:last-child { overflow: hidden; text-overflow: ellipsis; }
+.status-pill .dot { flex: none; width: 8px; height: 8px; border-radius: 50%; background: var(--warn); }
+.status-pill[data-tone="ok"] .dot { background: var(--good); }
+.status-pill[data-tone="error"] { color: var(--bad); }
+.status-pill[data-tone="error"] .dot { background: var(--bad); }
+
+#scanBtn.is-spinning .icon { animation: spin 0.9s linear infinite; }
+
+/* ---------- Workspace + views ---------- */
+.workspace { display: flex; flex: 1 1 auto; min-height: 0; }
+
+.inbox-pane, .reader-pane, .settings-pane { min-width: 0; overflow-y: auto; }
+
+/* Inbox: the list is the page. */
+.app[data-view="inbox"] .reader-pane,
+.app[data-view="inbox"] .settings-pane { display: none; }
+.app[data-view="inbox"] .inbox-pane { flex: 1 1 auto; }
+
+/* Reader: the list docks to the left so you can jump between emails. */
+.app[data-view="reader"] .settings-pane { display: none; }
+.app[data-view="reader"] .inbox-pane {
+  flex: none;
+  width: clamp(260px, 32vw, 360px);
+  background: var(--panel);
+  border-right: 1px solid var(--line);
+}
+.app[data-view="reader"] .reader-pane { display: flex; flex: 1 1 auto; }
+
+/* Settings: its own page. */
+.app[data-view="settings"] .inbox-pane,
+.app[data-view="settings"] .reader-pane { display: none; }
+.app[data-view="settings"] .settings-pane { flex: 1 1 auto; }
+
+/* Narrow window: no room for both, so the reader takes over (Back returns). */
+@media (max-width: 720px) {
+  .app[data-view="reader"] .inbox-pane { display: none; }
+  .status-pill { display: none; }
+}
+
+/* ---------- Toast ---------- */
+.toast {
+  position: fixed;
+  left: 50%;
+  bottom: 18px;
+  z-index: 10;
+  max-width: min(90vw, 520px);
+  padding: 10px 16px;
+  color: var(--panel);
+  background: var(--ink);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  transform: translateX(-50%);
+}
+.toast.is-error { color: #fff; background: var(--bad); }

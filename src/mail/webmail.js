@@ -2,12 +2,25 @@ const { shell } = require('electron');
 const { resolveHost } = require('./imapClient');
 const log = require('../logger');
 
-// Gmail link for the signed-in account. With an item, opens a search for that
-// exact message (by its Message-ID); without one, opens the account's mailbox.
+// Gmail's web app addresses a conversation by its id in hex: #all/<hex>.
+// IMAP gives the id in decimal (X-GM-THRID / X-GM-MSGID), so convert it.
+// Returns '' for anything that isn't a plain decimal id.
+function toGmailHex(decimal) {
+  if (!/^\d{1,20}$/.test(decimal || '')) return '';
+  try {
+    return BigInt(decimal).toString(16);
+  } catch {
+    return '';
+  }
+}
+
+// Gmail link for the signed-in account. With an item, opens that email's
+// conversation directly (under "All Mail", so it still works once archived);
+// without one, or if the id is unknown, opens the inbox.
 function gmailUrl(cfg, item) {
   const base = `https://mail.google.com/mail/?authuser=${encodeURIComponent(cfg.email)}`;
-  const id = ((item && item.messageId) || '').replace(/^<|>$/g, '');
-  return id ? `${base}#search/rfc822msgid%3A${encodeURIComponent(id)}` : base;
+  const hex = item ? toGmailHex(item.threadId) || toGmailHex(item.emailId) : '';
+  return hex ? `${base}#all/${hex}` : `${base}#inbox`;
 }
 
 // Returns a web link for the email, or null when the account isn't Gmail

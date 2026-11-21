@@ -1,7 +1,8 @@
 const { EventEmitter } = require('events');
 
 // The live status shown in the settings window and the tray tooltip.
-const state = { status: 'Not configured', lastScan: null, unreadCount: 0, results: [], canOpen: false };
+// ai: the smart-label engine's snapshot (status, classifiers, scores per uid).
+const state = { status: 'Not configured', lastScan: null, unreadCount: 0, results: [], canOpen: false, ai: null };
 const emitter = new EventEmitter();
 
 // meta.silent = true updates the tray and stored state but does not re-send the

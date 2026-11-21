@@ -1,0 +1,138 @@
+/* ---------- Inbox list (page and sidebar) ---------- */
+.pane-head {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 14px 16px 10px;
+  background: inherit;
+  background-color: var(--paper);
+  border-bottom: 1px solid var(--line);
+}
+.app[data-view="reader"] .pane-head { background-color: var(--panel); }
+
+.badge {
+  padding: 0 8px;
+  color: var(--accent-ink);
+  background: var(--accent);
+  border-radius: 10px;
+  font-size: 12px;
+  font-weight: 650;
+  line-height: 20px;
+}
+
+.mail-list { margin: 0; padding: 0; list-style: none; }
+
+/* As a page, the list sits in a centred card. */
+.app[data-view="inbox"] .pane-head,
+.app[data-view="inbox"] .mail-list,
+.app[data-view="inbox"] .empty-state { max-width: 860px; margin-inline: auto; }
+.app[data-view="inbox"] .mail-list {
+  margin-block: 12px 24px;
+  overflow: hidden;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  box-shadow: var(--shadow);
+}
+.app[data-view="inbox"] .pane-head { border-bottom: 0; padding-bottom: 0; }
+
+.mail-row {
+  position: relative;
+  display: flex;
+  align-items: center;
+  border-bottom: 1px solid var(--line);
+}
+.mail-row:last-child { border-bottom: 0; }
+.mail-row:hover { background: var(--hover); }
+.mail-row.is-selected { background: var(--selected); box-shadow: inset 3px 0 0 var(--accent); }
+/* A slightly heavier line under the last starred email separates the pinned group. */
+.mail-row.is-starred:has(+ .mail-row:not(.is-starred)) { border-bottom: 2px solid var(--line); }
+
+.row-main {
+  display: flex;
+  flex: 1 1 auto;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+  padding: 10px 16px 10px 2px;
+  text-align: left;
+  background: none;
+  border: 0;
+  border-radius: 0;
+}
+.row-main:hover:not(:disabled) { background: none; }
+
+/* Star toggle, always visible at the start of the row (like Gmail). */
+.row-star {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  margin-left: 8px;
+  padding: 0;
+  color: var(--muted);
+  background: none;
+  border: 0;
+  border-radius: 50%;
+  opacity: 0.6;
+}
+.row-star .icon { width: 18px; height: 18px; }
+.row-star:hover:not(:disabled) { color: var(--ink); background: var(--line); opacity: 1; }
+.row-star.is-starred,
+.row-star.is-starred:hover:not(:disabled) { color: var(--star); opacity: 1; }
+
+.row-text { display: flex; flex-direction: column; flex: 1 1 auto; min-width: 0; }
+.row-top { display: flex; align-items: baseline; gap: 8px; }
+.row-from { flex: 1 1 auto; min-width: 0; overflow: hidden; font-weight: 650; text-overflow: ellipsis; white-space: nowrap; }
+.row-date { flex: none; color: var(--muted); font-size: 12px; font-weight: 600; }
+.row-subject { overflow: hidden; color: var(--muted); text-overflow: ellipsis; white-space: nowrap; }
+
+/* Quick actions appear over the date on hover / keyboard focus, as in Gmail. */
+.row-actions {
+  position: absolute;
+  top: 50%;
+  right: 10px;
+  display: flex;
+  gap: 2px;
+  padding-left: 16px;
+  background: linear-gradient(to right, transparent, var(--hover) 16px);
+  transform: translateY(-50%);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.12s;
+}
+.mail-row.is-selected .row-actions { background: linear-gradient(to right, transparent, var(--selected) 16px); }
+.mail-row:hover .row-actions,
+.mail-row:focus-within .row-actions { opacity: 1; pointer-events: auto; }
+
+.row-action {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  color: var(--muted);
+  background: none;
+  border: 0;
+  border-radius: 50%;
+}
+.row-action .icon { width: 18px; height: 18px; }
+.row-action:hover:not(:disabled) { color: var(--ink); background: var(--line); }
+
+/* ---------- Empty state ---------- */
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 48px 24px;
+  text-align: center;
+}
+.empty-state p { margin: 0; }
+.empty-icon .icon { width: 48px; height: 48px; color: var(--accent); opacity: 0.7; }
+.empty-title { margin-top: 8px !important; font-size: 16px; font-weight: 650; }
+.empty-state button { margin-top: 14px; }

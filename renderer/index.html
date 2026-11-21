@@ -2,71 +2,299 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; frame-src mail-view:">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Mail Scanner</title>
-  <link rel="stylesheet" href="styles.css">
-  <script src="renderer.js" defer></script>
+
+  <link rel="stylesheet" href="styles/base.css">
+  <link rel="stylesheet" href="styles/shell.css">
+  <link rel="stylesheet" href="styles/inbox.css">
+  <link rel="stylesheet" href="styles/reader.css">
+  <link rel="stylesheet" href="styles/settings.css">
+  <link rel="stylesheet" href="styles/labels.css">
+
+  <!-- Not deferred: applies the saved theme before the first paint. -->
+  <script src="js/appearance.js"></script>
+
+  <!-- Modules share one namespace (window.App) and load in this order. -->
+  <script src="js/dom.js" defer></script>
+  <script src="js/icons.js" defer></script>
+  <script src="js/store.js" defer></script>
+  <script src="js/toast.js" defer></script>
+  <script src="js/actions.js" defer></script>
+  <script src="js/labels.js" defer></script>
+  <script src="js/inbox.js" defer></script>
+  <script src="js/reader.js" defer></script>
+  <script src="js/settings.js" defer></script>
+  <script src="js/smart-labels.js" defer></script>
+  <script src="js/appearance-ui.js" defer></script>
+  <script src="js/app.js" defer></script>
 </head>
 <body>
-  <main>
-    <header>
-      <h1>Mail Scanner</h1>
-      <p class="lede">Checks your inbox in the background and tells you about new mail.</p>
+  <!-- data-view: "inbox" | "reader" | "settings" (drives the layout in shell.css) -->
+  <div id="app" class="app" data-view="inbox">
+
+    <!-- ===== Top bar ===== -->
+    <header class="topbar">
+      <button id="navInbox" class="brand" type="button" title="Inbox">
+        <span class="brand-mark" data-icon="mail"></span>
+        <span class="brand-name">Mail Scanner</span>
+      </button>
+
+      <div id="statusPill" class="status-pill" title="">
+        <span class="dot" aria-hidden="true"></span>
+        <span id="statusText">Starting…</span>
+      </div>
+
+      <span class="spacer"></span>
+
+      <button id="themeBtn" class="icon-btn" type="button" title="Switch theme" aria-label="Switch theme"></button>
+      <button id="scanBtn" class="icon-btn" type="button" title="Check for new mail" aria-label="Check for new mail">
+        <span data-icon="refresh"></span>
+      </button>
+      <button id="gmailBtn" class="icon-btn" type="button" title="Open Gmail in your browser" aria-label="Open Gmail in your browser" hidden>
+        <span data-icon="external"></span>
+      </button>
+      <button id="navSettings" class="icon-btn" type="button" title="Settings" aria-label="Settings">
+        <span data-icon="settings"></span>
+      </button>
     </header>
 
-    <section aria-labelledby="h-inbox">
-      <div class="section-head">
-        <h2 id="h-inbox">Inbox</h2>
-        <button id="openInbox" class="link" type="button" hidden>Open Gmail</button>
-      </div>
-      <div class="summary">
-        <span><strong id="count">0</strong> unread</span>
-        <span id="status" class="muted"></span>
-      </div>
-      <ul id="results" class="mail-list"></ul>
-      <p id="empty" class="muted empty">Nothing to show yet.</p>
-    </section>
+    <div class="workspace">
 
-    <section aria-labelledby="h-account">
-      <h2 id="h-account">Account</h2>
-      <label class="field">Email address
-        <input id="email" type="email" autocomplete="off" placeholder="you@gmail.com">
-      </label>
-      <label class="field">App password
-        <input id="password" type="password" autocomplete="off" placeholder="App password">
-        <small>Create one in your email provider's security settings. Your normal password will not work with most providers.</small>
-      </label>
-      <div class="row">
-        <label class="field">IMAP server
-          <input id="host" type="text" placeholder="Detected from your address">
-        </label>
-        <label class="field">Port
-          <input id="port" type="number" min="1" max="65535">
-        </label>
-      </div>
-    </section>
+      <!-- ===== Inbox list (full page, or a sidebar while reading) ===== -->
+      <aside id="inboxPane" class="inbox-pane" aria-labelledby="inboxTitle">
+        <div class="pane-head">
+          <h2 id="inboxTitle">Inbox</h2>
+          <span id="unreadBadge" class="badge" hidden>0</span>
+          <span class="spacer"></span>
+          <span id="lastChecked" class="muted small"></span>
+        </div>
+        <div id="labelFilter" class="filter-bar" role="toolbar" aria-label="Filter by label" hidden></div>
+        <ul id="mailList" class="mail-list" aria-label="Unread emails"></ul>
+        <div id="inboxEmpty" class="empty-state" hidden>
+          <span class="empty-icon" data-icon="inbox"></span>
+          <p id="inboxEmptyTitle" class="empty-title">You're all caught up</p>
+          <p id="inboxEmptyText" class="muted">No unread mail right now.</p>
+          <button id="inboxEmptyAction" type="button" hidden>Set up your account</button>
+        </div>
+      </aside>
 
-    <section aria-labelledby="h-scanning">
-      <h2 id="h-scanning">Scanning</h2>
-      <label class="field">Refresh the list every (minutes)
-        <input id="interval" type="number" min="1" max="1440">
-        <small>New mail is pushed to you instantly. This only refreshes the unread list as a safety net.</small>
-      </label>
-      <label class="field">Only alert for these words
-        <input id="keywords" type="text" placeholder="invoice, interview, security alert">
-        <small>Separate with commas. Matches the sender and subject. Leave empty to be alerted about all new mail.</small>
-      </label>
-      <label class="check"><input id="notify" type="checkbox"> Show desktop notifications</label>
-      <label class="check"><input id="launch" type="checkbox"> Start when I sign in to my computer</label>
-    </section>
+      <!-- ===== Reader ===== -->
+      <section id="readerPane" class="reader-pane" aria-label="Email">
+        <div class="toolbar" role="toolbar" aria-label="Email actions">
+          <button id="rBack" type="button" class="tool" title="Back to inbox (Esc)">
+            <span data-icon="back"></span><span class="tool-label">Inbox</span>
+          </button>
+          <span class="spacer"></span>
+          <button id="rOpen" type="button" class="tool" title="Open in browser">
+            <span data-icon="external"></span><span class="tool-label">Open in browser</span>
+          </button>
+          <button id="rStar" type="button" class="tool tool-star" title="Star (S)" aria-pressed="false">
+            <span class="star-icon"></span><span class="tool-label">Star</span>
+          </button>
+          <button id="rArchive" type="button" class="tool" title="Archive (E)">
+            <span data-icon="archive"></span><span class="tool-label">Archive</span>
+          </button>
+          <button id="rDelete" type="button" class="tool tool-danger" title="Delete (#)">
+            <span data-icon="trash"></span><span class="tool-label">Delete</span>
+          </button>
+          <button id="rRead" type="button" class="tool" title="Mark as read (I)">
+            <span data-icon="read"></span><span class="tool-label">Mark as read</span>
+          </button>
+        </div>
 
-    <div class="actions">
-      <button id="save" class="primary" type="button">Save settings</button>
-      <button id="test" type="button">Test connection</button>
-      <button id="scan" type="button">Scan now</button>
+        <article class="message">
+          <h1 id="rSubject" class="subject"></h1>
+          <div id="rLabels" class="reader-labels" hidden></div>
+          <div id="rSpamBanner" class="spam-banner" role="note" hidden>
+            <strong>This looks like spam.</strong> The local AI flagged it. Be careful with links, attachments and requests for personal details.
+          </div>
+          <div class="sender">
+            <div id="rAvatar" class="avatar" aria-hidden="true"></div>
+            <div class="who">
+              <div class="who-line">
+                <strong id="rFromName"></strong>
+                <span id="rFromAddr" class="muted small"></span>
+              </div>
+              <div id="rTo" class="muted small"></div>
+            </div>
+            <time id="rDate" class="muted small"></time>
+          </div>
+          <ul id="rAttachments" class="attachments" hidden></ul>
+          <div id="rLoading" class="loading" hidden><span class="spinner" aria-hidden="true"></span> Loading email…</div>
+          <div id="rError" class="reader-error" hidden></div>
+          <iframe id="rBody" class="body-frame" title="Email content" hidden
+                  sandbox="allow-popups allow-popups-to-escape-sandbox" referrerpolicy="no-referrer"></iframe>
+        </article>
+      </section>
+
+      <!-- ===== Settings ===== -->
+      <section id="settingsPane" class="settings-pane" aria-labelledby="settingsTitle">
+        <div class="settings-inner">
+          <div class="settings-head">
+            <button id="settingsBack" type="button" class="tool" title="Back to inbox">
+              <span data-icon="back"></span><span class="tool-label">Inbox</span>
+            </button>
+            <h2 id="settingsTitle">Settings</h2>
+          </div>
+
+          <div id="setupBanner" class="banner" hidden>
+            <strong>Welcome!</strong> Add your email address and an app password to start watching your inbox.
+          </div>
+
+          <div class="card">
+            <h3>Account</h3>
+            <label class="field">Email address
+              <input id="email" type="email" autocomplete="off" placeholder="you@gmail.com">
+            </label>
+            <label class="field">App password
+              <input id="password" type="password" autocomplete="off" placeholder="App password">
+              <small>Create one in your email provider's security settings. Your normal password will not work with most providers.</small>
+            </label>
+            <details class="advanced">
+              <summary>Server settings</summary>
+              <div class="row">
+                <label class="field">IMAP server
+                  <input id="host" type="text" placeholder="Detected from your address">
+                </label>
+                <label class="field">Port
+                  <input id="port" type="number" min="1" max="65535">
+                </label>
+              </div>
+            </details>
+          </div>
+
+          <div class="card">
+            <h3>Alerts</h3>
+            <label class="check"><input id="notify" type="checkbox"> Show desktop notifications for new mail</label>
+            <label class="field">Only alert for these words
+              <input id="keywords" type="text" placeholder="invoice, interview, security alert">
+              <small>Separate with commas. Matches the sender and subject. Leave empty to be alerted about all new mail.</small>
+            </label>
+          </div>
+
+          <div class="card">
+            <h3>Background</h3>
+            <label class="check"><input id="launch" type="checkbox"> Start when I sign in to my computer</label>
+            <label class="field">Refresh the list every (minutes)
+              <input id="interval" type="number" min="1" max="1440">
+              <small>New mail is pushed to you instantly. This only refreshes the unread list as a safety net.</small>
+            </label>
+            <label class="field">Show at most (unread emails)
+              <input id="maxEmails" type="number" min="1" max="200" step="1">
+              <small>The newest unread emails, up to this number (1–200). Starred emails are always shown at the top and don't count toward it.</small>
+            </label>
+          </div>
+
+          <div class="actions">
+            <button id="save" class="primary" type="button">Save settings</button>
+            <button id="test" type="button">Test connection</button>
+          </div>
+
+          <!-- ===== Appearance. Changes apply immediately. ===== -->
+          <h2 class="settings-section">Appearance</h2>
+
+          <div class="card">
+            <div class="field">Theme
+              <div id="themePicker" class="segmented" role="radiogroup" aria-label="Theme"></div>
+              <small>System follows your computer's light or dark setting. The sun/moon button in the top bar switches quickly.</small>
+            </div>
+            <div class="field">Accent colour
+              <div id="accentSwatches" class="swatches" role="radiogroup" aria-label="Accent colour"></div>
+              <small>Used for buttons, links, the unread badge and the selected email. Pick "+" for any colour.</small>
+            </div>
+            <div class="field">Background
+              <div id="tonePicker" class="segmented" role="radiogroup" aria-label="Background tone"></div>
+            </div>
+            <p><button id="appearanceReset" type="button" class="link-btn">Reset to the default look</button></p>
+          </div>
+
+          <!-- ===== Smart labels (Laya). Changes here apply immediately. ===== -->
+          <h2 class="settings-section">Smart labels</h2>
+
+          <div class="card">
+            <div class="card-head">
+              <h3>Laya</h3>
+              <label class="switch"><input id="aiEnabled" type="checkbox"><span>On</span></label>
+            </div>
+            <p class="muted small card-lede">Laya is an open-source decision model that runs on this computer through Ollama. It answers your classifiers' questions about each unread email. Your email never leaves your PC.</p>
+
+            <div id="aiStatus" class="ai-status" data-tone="idle">
+              <span class="dot" aria-hidden="true"></span>
+              <span id="aiStatusText">Starting…</span>
+            </div>
+            <div id="aiProgress" class="progress" hidden><div id="aiProgressBar" class="progress-bar"></div></div>
+
+            <div class="ai-actions">
+              <button id="aiDownload" class="primary" type="button" hidden>Download Laya</button>
+              <button id="aiRetry" type="button" hidden>Retry</button>
+              <button id="aiReclassify" type="button">Label everything again</button>
+            </div>
+
+            <details class="advanced">
+              <summary>Model settings</summary>
+              <label class="field">Model
+                <input id="aiModel" type="text" placeholder="laya">
+                <small>A Laya tag from Ollama, such as <code>laya</code> (English, 0.8 GB) or <code>laya:322m-multilingual-bf16</code> (other languages).</small>
+              </label>
+              <label class="field">Models folder
+                <input id="aiModelsDir" type="text">
+                <small>Where Mail Scanner's own Ollama server stores downloaded models.</small>
+              </label>
+              <label class="field">Ollama program
+                <input id="aiOllamaPath" type="text" placeholder="Found automatically">
+              </label>
+              <button id="aiApplyModel" type="button">Apply model settings</button>
+            </details>
+          </div>
+
+          <div class="card">
+            <div class="card-head">
+              <h3>Classifiers</h3>
+              <span id="clsCount" class="muted small"></span>
+            </div>
+            <p class="muted small card-lede">Each classifier is a question Laya answers about every email: yes or no, pick one option, or a place on a scale. The answers become labels you can filter by.</p>
+            <ul id="clsList" class="cls-list"></ul>
+
+            <div class="add-classifier">
+              <h4>Add a ready-made classifier</h4>
+              <div id="presetGrid" class="preset-grid"></div>
+
+              <h4 id="clsFormTitle">Create your own</h4>
+              <label class="field">Name
+                <input id="clsName" type="text" maxlength="40" placeholder="e.g. University">
+              </label>
+              <div class="field">Type
+                <div id="clsTypes" class="segmented" role="radiogroup" aria-label="Classifier type"></div>
+                <small id="clsTypeHint"></small>
+              </div>
+              <label class="field">Question for Laya
+                <textarea id="clsQuestion" rows="2" maxlength="300" placeholder="e.g. Is this email from my university about classes, exams, fees or campus events?"></textarea>
+                <small>Ask it the way you'd ask a person sorting your mail.</small>
+              </label>
+              <label id="clsOptionsField" class="field" hidden>Options
+                <textarea id="clsOptions" rows="5" placeholder="One per line. Add a hint after a colon if it helps:&#10;Classes: lectures, timetables or assignments&#10;Exams&#10;Fees: tuition or payments&#10;Other"></textarea>
+                <small>2–20 options, one per line. An option called "Other" is never shown as a label.</small>
+              </label>
+              <label id="clsLevelsField" class="field" hidden>Levels, lowest first
+                <textarea id="clsLevels" rows="4" placeholder="One per line, lowest first:&#10;Not important&#10;Somewhat important&#10;Very important"></textarea>
+                <small>2–10 levels. The lowest level means "nothing to flag", so it isn't shown as a label.</small>
+              </label>
+              <div class="field">Colour
+                <div id="clsColors" class="swatches" role="radiogroup" aria-label="Label colour"></div>
+              </div>
+              <div class="actions">
+                <button id="clsSave" class="primary" type="button">Add classifier</button>
+                <button id="clsCancel" type="button" hidden>Cancel</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
     </div>
-    <div id="msg" class="feedback" role="status"></div>
-  </main>
+
+    <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
+  </div>
 </body>
 </html>

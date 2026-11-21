@@ -1,13 +1,38 @@
-const { ipcMain } = require('electron');
+const { ipcMain, nativeTheme } = require('electron');
 const config = require('./config');
 const session = require('./session');
 const autostart = require('./system/autostart');
-const { testConnection } = require('./mail/imapClient');
+const { testConnection, describeError } = require('./mail/imapClient');
 const { webmailUrl, openInBrowser } = require('./mail/webmail');
 const { markAsRead } = require('./mail/markRead');
+const { setStar } = require('./mail/star');
+const { loadMessage, archiveMessage, deleteMessage } = require('./mail/reader');
+const aiConfig = require('./ai/aiConfig');
 
 // Connects the settings window to the main process.
-function registerIpc({ watcher }) {
+function registerIpc({ watcher, classifier }) {
+  // Appearance: the window frame (title bar, scrollbars) follows the app's theme.
+  ipcMain.handle('ui:theme', (_event, theme) => {
+    if (['system', 'light', 'dark'].includes(theme)) nativeTheme.themeSource = theme;
+  });
+
+  // Smart labels (local Llama classifiers).
+  ipcMain.handle('ai:get', () => classifier.publicConfig());
+  ipcMain.handle('ai:save', async (_event, data) => {
+    await classifier.configure(data && typeof data === 'object' ? data : {});
+    return { ok: true, config: classifier.publicConfig() };
+  });
+  ipcMain.handle('ai:download', () => classifier.download());
+  ipcMain.handle('ai:retry', async () => {
+    await classifier.start();
+    return { ok: true };
+  });
+  ipcMain.handle('ai:reclassify', () => {
+    classifier.reclassify();
+    return { ok: true };
+  });
+  ipcMain.handle('ai:newId', () => aiConfig.newId());
+
   ipcMain.handle('cfg:get', () => config.toPublic(config.load()));
 
   ipcMain.handle('cfg:save', async (_event, data) => {
@@ -19,12 +44,12 @@ function registerIpc({ watcher }) {
   });
 
   ipcMain.handle('cfg:test', async (_event, data) => {
-    const existing = config.load();
+    const cfg = config.merge(config.load(), data || {});
     try {
-      await testConnection(config.merge(existing, data || {}));
+      await testConnection(cfg);
       return { ok: true };
     } catch (err) {
-      return { ok: false, error: err.responseText || err.message };
+      return { ok: false, error: describeError(err, cfg) };
     }
   });
 
@@ -46,6 +71,12 @@ function registerIpc({ watcher }) {
   ipcMain.handle('mail:markSeen', (_event, uid) =>
     markAsRead({ watcher, uid, silent: true, mustBeListed: true })
   );
+
+  // Reader view: load the full email, then archive / delete from its toolbar.
+  ipcMain.handle('mail:star', (_event, uid, starred) => setStar({ watcher, uid, starred }));
+  ipcMain.handle('mail:get', (_event, uid) => loadMessage({ watcher, uid }));
+  ipcMain.handle('mail:archive', (_event, uid) => archiveMessage({ watcher, uid, silent: true }));
+  ipcMain.handle('mail:trash', (_event, uid) => deleteMessage({ watcher, uid, silent: true }));
 
   ipcMain.handle('scan:now', () => watcher.refresh());
   ipcMain.handle('state:get', () => session.get());

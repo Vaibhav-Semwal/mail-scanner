@@ -2,12 +2,14 @@ const { safeStorage } = require('electron');
 const { readJson, writeJson } = require('./storage/jsonStore');
 
 const FILE = 'config.json';
+const MAX_EMAILS = 200;
 
 const DEFAULTS = {
   email: '',
   host: '',
   port: 993,
   intervalMin: 10,
+  maxEmails: 20, // unread emails listed (starred ones are shown on top of this)
   keywords: '',
   notify: true,
   launchAtLogin: true
@@ -25,6 +27,7 @@ function sanitize(input) {
     host: String(input.host || '').trim(),
     port: clamp(input.port, 1, 65535, DEFAULTS.port),
     intervalMin: clamp(input.intervalMin, 1, 1440, DEFAULTS.intervalMin),
+    maxEmails: clamp(input.maxEmails, 1, MAX_EMAILS, DEFAULTS.maxEmails),
     keywords: String(input.keywords || '').trim(),
     notify: Boolean(input.notify),
     launchAtLogin: Boolean(input.launchAtLogin)

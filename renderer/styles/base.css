@@ -1,0 +1,199 @@
+/* ---------- Design tokens ----------
+   js/appearance.js sets on <html>:
+     data-mode="light" | "dark"           the effective theme (System resolved)
+     data-tone="slate" | "neutral" | "warm" the background tone
+     --accent / --accent-ink               the chosen accent, tuned per theme
+   The values below are the defaults if that script never runs. */
+:root {
+  --ink: #1c2a33;
+  --muted: #5d6e79;
+  --paper: #f3f6f7;
+  --panel: #ffffff;
+  --hover: #eef3f4;
+  --line: #dbe3e7;
+  --accent: #0f766e;
+  --accent-ink: #ffffff;
+  --accent-soft: color-mix(in srgb, var(--accent) 18%, var(--panel));
+  --selected: color-mix(in srgb, var(--accent) 15%, var(--panel));
+  --good: #0f766e;
+  --bad: #b42318;
+  --bad-soft: #fdecea;
+  --warn: #b7791f;
+  --star: #e3a008; /* Gmail-like gold */
+  --radius: 8px;
+  --shadow: 0 1px 2px rgb(16 24 32 / 6%), 0 4px 14px rgb(16 24 32 / 6%);
+  color-scheme: light;
+}
+:root[data-tone="neutral"] { --ink: #1f1f1f; --muted: #5f6368; --paper: #f5f5f5; --panel: #ffffff; --hover: #f0f0f0; --line: #e0e0e0; }
+:root[data-tone="warm"]    { --ink: #2b2520; --muted: #6f655c; --paper: #f7f3ee; --panel: #fffdfa; --hover: #f1ebe3; --line: #e6ddd2; }
+
+:root[data-mode="dark"] {
+  --ink: #e4edf1;
+  --muted: #8fa3af;
+  --paper: #10171b;
+  --panel: #172026;
+  --hover: #1f2a31;
+  --line: #2a3841;
+  --accent: #2dd4bf;
+  --accent-ink: #072622;
+  --good: #2dd4bf;
+  --bad: #f97066;
+  --bad-soft: #3a1d1b;
+  --warn: #f6c453;
+  --star: #f6c453;
+  --shadow: 0 1px 2px rgb(0 0 0 / 30%), 0 4px 14px rgb(0 0 0 / 25%);
+  color-scheme: dark;
+}
+:root[data-mode="dark"][data-tone="neutral"] { --ink: #e8eaed; --muted: #9aa0a6; --paper: #121212; --panel: #1e1e1e; --hover: #2a2a2a; --line: #353535; }
+:root[data-mode="dark"][data-tone="warm"]    { --ink: #efe7df; --muted: #a89c90; --paper: #17130f; --panel: #211b16; --hover: #2c251f; --line: #3b3129; }
+
+/* ---------- Base ---------- */
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+
+html, body { height: 100%; }
+body {
+  margin: 0;
+  overflow: hidden; /* each pane scrolls on its own */
+  background: var(--paper);
+  color: var(--ink);
+  font: 14px/1.5 "Segoe UI", system-ui, -apple-system, "Helvetica Neue", sans-serif;
+}
+
+h1, h2, h3 { margin: 0; font-weight: 650; }
+h2 { font-size: 16px; }
+h3 { font-size: 14px; }
+
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+
+.icon { width: 20px; height: 20px; fill: currentColor; flex: none; }
+
+/* ---------- Buttons ---------- */
+button {
+  padding: 8px 14px;
+  font: inherit;
+  color: var(--ink);
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  cursor: pointer;
+}
+button:disabled { opacity: 0.45; cursor: default; }
+button:hover:not(:disabled) { background: var(--hover); }
+
+button.primary { color: var(--accent-ink); background: var(--accent); border-color: var(--accent); font-weight: 600; }
+button.primary:hover:not(:disabled) { background: var(--accent); filter: brightness(1.08); }
+
+/* Round icon-only button (top bar). */
+.icon-btn {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  color: var(--muted);
+  background: none;
+  border: 0;
+  border-radius: 50%;
+}
+.icon-btn:hover:not(:disabled), .icon-btn.is-active { color: var(--ink); background: var(--hover); }
+
+/* Pill button with icon + label (toolbars). */
+button.tool {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px 6px 8px;
+  color: var(--ink);
+  background: none;
+  border: 1px solid transparent;
+  border-radius: 18px;
+  font-size: 13px;
+}
+button.tool .icon { width: 18px; height: 18px; color: var(--muted); }
+button.tool:hover:not(:disabled) { background: var(--hover); }
+button.tool-danger:hover:not(:disabled), button.tool-danger:hover:not(:disabled) .icon { color: var(--bad); }
+.star-icon { display: inline-grid; }
+button.tool-star.is-starred .icon { color: var(--star); }
+
+/* ---------- Segmented picker (joined buttons, one picked) ---------- */
+.segmented { display: flex; width: fit-content; max-width: 100%; margin: 6px 0 2px; border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; }
+.segmented .seg {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  font-size: 13px;
+  font-weight: 600;
+  background: var(--panel);
+  border: 0;
+  border-right: 1px solid var(--line);
+  border-radius: 0;
+}
+.segmented .seg .icon { width: 16px; height: 16px; }
+.segmented .seg:last-child { border-right: 0; }
+.segmented .seg.is-picked,
+.segmented .seg.is-picked:hover:not(:disabled) { color: var(--accent-ink); background: var(--accent); }
+
+/* ---------- Colour swatches ---------- */
+.swatches { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 6px; }
+.swatch {
+  --label: #888;
+  position: relative;
+  width: 26px;
+  height: 26px;
+  padding: 0;
+  background: var(--label);
+  border: 2px solid var(--panel);
+  border-radius: 50%;
+  box-shadow: 0 0 0 1px var(--line);
+}
+.swatch:hover:not(:disabled) { background: var(--label); transform: scale(1.1); }
+.swatch.is-picked { box-shadow: 0 0 0 2px var(--ink); }
+
+/* "+" swatch wrapping the native colour picker. */
+.swatch-custom {
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  cursor: pointer;
+  background: conic-gradient(#d93025, #e8710a, #f9ab00, #188038, #1a73e8, #8e24aa, #d93025);
+}
+.swatch-custom.is-picked { background: var(--label); }
+.swatch-custom input { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; }
+.swatch-plus { color: #fff; font-weight: 700; line-height: 1; text-shadow: 0 0 3px rgb(0 0 0 / 60%); pointer-events: none; }
+
+/* ---------- Avatars ---------- */
+.avatar {
+  --hue: 174;
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  color: #fff;
+  background: hsl(var(--hue) 55% 40%);
+  font-size: 17px;
+  font-weight: 600;
+  user-select: none;
+}
+.avatar-sm { width: 34px; height: 34px; font-size: 14px; }
+
+/* ---------- Utilities ---------- */
+.spacer { flex: 1 1 auto; }
+.muted { color: var(--muted); }
+.small { font-size: 12px; }
+.is-ok { color: var(--good); }
+.is-error { color: var(--bad); }
+
+@keyframes spin { to { transform: rotate(360deg); } }
+.spinner {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  border: 2px solid var(--line);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}

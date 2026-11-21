@@ -1,5 +1,6 @@
 const { Notification } = require('electron');
-const { openInBrowser } = require('./mail/webmail');
+const { APP_NAME, notificationIcon } = require('./system/notifyIdentity');
+const { avatarFor } = require('./ui/avatar');
 const log = require('./logger');
 
 const MAX_INDIVIDUAL = 3;
@@ -8,18 +9,19 @@ const live = new Set(); // keeps notifications alive so click handlers still fir
 // Windows and macOS can show buttons on a notification. Linux cannot.
 const hasButtons = process.platform === 'win32' || process.platform === 'darwin';
 
-//   urlFor(item)     web link for an email (or the mailbox when no item is given), or null
+//   onOpenApp(item)  shows the app; with an item it opens that email in the reader
 //   onMarkRead(item) called when "Mark read" is pressed
-function buttonsFor(item, { urlFor, onMarkRead }) {
-  const buttons = [];
-  const url = urlFor(item);
-  if (url) buttons.push({ kind: 'open', label: 'Open in browser', run: () => openInBrowser(url) });
+function buttonsFor(item, { onOpenApp, onMarkRead }) {
+  const buttons = [{ kind: 'open', label: 'Open in app', run: () => onOpenApp(item) }];
   if (item) buttons.push({ kind: 'read', label: 'Mark read', run: () => onMarkRead(item) });
   return buttons;
 }
 
-function show({ title, body, buttons }, onOpenApp) {
+// picture: the sender's avatar (NativeImage) or null for the MailTag logo.
+function show({ title, body, buttons, item = null, picture = null }, onOpenApp) {
   const options = { title, body, silent: false };
+  const icon = picture || notificationIcon();
+  if (icon) options.icon = icon; // main image beside the text
   if (hasButtons && buttons.length) {
     options.actions = buttons.map((b) => ({ type: 'button', text: b.label }));
   }
@@ -33,12 +35,10 @@ function show({ title, body, buttons }, onOpenApp) {
   // 'click' from re-running the open/open-app logic for the same press.
   let actionHandled = false;
 
-  // Clicking the notification itself opens the app. Linux has no buttons, so
-  // there a click opens the email in the browser instead.
-  const open = buttons.find((b) => b.kind === 'open');
+  // Clicking the notification itself opens the email in the app.
   n.on('click', () => {
     if (actionHandled) return;
-    open && !hasButtons ? open.run() : onOpenApp();
+    onOpenApp(item);
   });
 
   // A button was pressed. Newer Electron passes { actionIndex }; older passes the index.
@@ -66,12 +66,19 @@ function notifyNewMail(items, handlers) {
   if (!items.length || !Notification.isSupported()) return;
 
   if (items.length <= MAX_INDIVIDUAL) {
-    items.forEach((m) =>
-      show({ title: m.from, body: m.subject, buttons: buttonsFor(m, handlers) }, handlers.onOpenApp)
+    // Sender pictures load in parallel (a photo lookup waits at most a few seconds),
+    // then the notifications show in arrival order.
+    Promise.all(items.map((m) => avatarFor(m).catch(() => null))).then((pictures) =>
+      items.forEach((m, i) =>
+        show(
+          { title: m.from, body: m.subject, buttons: buttonsFor(m, handlers), item: m, picture: pictures[i] },
+          handlers.onOpenApp
+        )
+      )
     );
   } else {
     show(
-      { title: 'Mail Scanner', body: `${items.length} new emails`, buttons: buttonsFor(null, handlers) },
+      { title: APP_NAME, body: `${items.length} new emails`, buttons: buttonsFor(null, handlers) },
       handlers.onOpenApp
     );
   }

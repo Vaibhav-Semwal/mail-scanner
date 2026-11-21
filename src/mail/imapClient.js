@@ -30,6 +30,31 @@ function createClient(cfg) {
   });
 }
 
+// Network failures from imapflow often have a code but an empty message, which
+// used to surface as "unknown error" (or nothing). Say what went wrong instead.
+const NETWORK_ERRORS = {
+  ETIMEDOUT: 'timed out',
+  CONNECT_TIMEOUT: 'timed out',
+  GREETING_TIMEOUT: 'timed out',
+  ECONNREFUSED: 'connection refused',
+  ECONNRESET: 'connection was reset',
+  EHOSTUNREACH: 'host unreachable',
+  ENETUNREACH: 'no network',
+  ENOTFOUND: 'server name not found',
+  EAI_AGAIN: 'no network (name lookup failed)'
+};
+
+function describeError(err, cfg) {
+  if (!err) return 'unknown error';
+  const network = NETWORK_ERRORS[err.code];
+  if (network && cfg) {
+    const port = cfg.port || 993;
+    const hint = port === 993 ? 'Check your internet connection.' : 'Check the port in Settings (most mail servers use 993).';
+    return `Could not reach ${resolveHost(cfg)}:${port} (${network}). ${hint}`;
+  }
+  return err.responseText || err.message || network || err.code || 'unknown error';
+}
+
 async function testConnection(cfg) {
   const client = createClient(cfg);
   client.on('error', () => {}); // reported through the rejected promise instead
@@ -37,4 +62,4 @@ async function testConnection(cfg) {
   await client.logout();
 }
 
-module.exports = { createClient, testConnection, resolveHost };
+module.exports = { createClient, testConnection, resolveHost, describeError };

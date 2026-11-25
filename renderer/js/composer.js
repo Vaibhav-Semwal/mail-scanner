@@ -1,9 +1,10 @@
 'use strict';
 
-// The chat-style composer under an open email: reply, reply all or forward, with
-// To / Cc / Bcc / Subject and files from the PC (the + button, drag and drop, or
-// paste). Each email keeps its own draft while you move around the list, and what
-// you send shows up in the thread like a chat message.
+// The chat-style composer: under an open email (reply, reply all, forward) or on
+// its own for a new email (the Compose button). To / Cc / Bcc / Subject and files
+// from the PC (the + button, drag and drop, or paste). Each email, and the new
+// email, keeps its own draft while you move around, and what you send shows up in
+// the thread like a chat message.
 App.composer = (() => {
   const { $, h, shortDate, fullDate, formatSize, paintAvatar } = App.dom;
   const MAX_FILE = 25 * 1024 * 1024;
@@ -12,13 +13,16 @@ App.composer = (() => {
   let el = null;
   let fields = null;   // recipient inputs { to, cc, bcc }
   let mail = null;     // the loaded email being answered, or null
-  let state = null;    // the current draft
+  let state = null;    // the current draft (mode 'new' for a new email)
   let sending = false;
-  const drafts = new Map(); // uid -> draft
-  const sent = new Map();   // uid -> [{ ... }] what was sent from this window
+  const NEW = 'new';        // drafts / sent key for new emails
+  const drafts = new Map(); // uid or NEW -> draft
+  const sent = new Map();   // uid or NEW -> [{ ... }] what was sent from this window
 
   const nameOf = (a) => a.name || a.address;
   const current = () => mail;
+  const keyOf = () => (mail ? mail.uid : NEW);
+  const isNew = () => Boolean(state && state.mode === 'new');
   const myAddress = () => ((App.store.config && App.store.config.email) || '').toLowerCase();
 
   /* ---------------- drafts ---------------- */
@@ -48,7 +52,7 @@ App.composer = (() => {
   }
 
   function freshDraft(mode = 'reply') {
-    const d = defaultsFor(mode);
+    const d = mode === 'new' ? { to: [], cc: [], subject: '' } : defaultsFor(mode);
     return { mode, to: d.to, cc: d.cc, bcc: [], subject: d.subject, text: '', files: [], includeOriginal: true, ccOpen: d.cc.length > 0, bccOpen: false, open: false };
   }
 
@@ -67,13 +71,28 @@ App.composer = (() => {
     return !d.text.trim() && !d.files.length;
   }
 
+  // Worth keeping as a draft when you move away?
+  function hasDraft(d) {
+    if (d.mode === 'new') return !isEmpty(d) || d.to.length > 0 || d.cc.length > 0 || d.bcc.length > 0 || Boolean(d.subject.trim());
+    return !isEmpty(d) || d.mode !== 'reply';
+  }
+
   /* ---------------- rendering ---------------- */
 
   function renderContext() {
     const mode = state ? state.mode : 'reply';
-    el.modeIcon.replaceChildren(App.icons.svg(mode === 'forward' ? 'forward' : mode === 'replyAll' ? 'replyAll' : 'reply'));
+    el.modeIcon.replaceChildren(App.icons.svg({ forward: 'forward', replyAll: 'replyAll', new: 'edit' }[mode] || 'reply'));
     const strong = (text) => h('strong', { text });
-    if (!mail) el.contextText.replaceChildren('Open an email to reply');
+    el.modes.hidden = mode === 'new';
+    el.close.title = mode === 'new' ? 'Close (Esc). Your draft is kept.' : 'Hide (Esc). Your draft is kept.';
+    // A new email is written like a letter (Enter = new line); replies like chat.
+    const kbd = (t) => h('kbd', { text: t });
+    el.hint.replaceChildren(...(mode === 'new'
+      ? [kbd('Ctrl'), '+', kbd('Enter'), ' to send · ', kbd('Esc'), ' to close · drop or paste files to attach']
+      : [kbd('Enter'), ' to send · ', kbd('Shift'), '+', kbd('Enter'), ' new line · ', kbd('Esc'), ' to hide · drop or paste files to attach']));
+    el.send.title = mode === 'new' ? 'Send (Ctrl+Enter)' : 'Send (Enter)';
+    if (mode === 'new') el.contextText.replaceChildren(strong('New email'));
+    else if (!mail) el.contextText.replaceChildren('Open an email to reply');
     else if (mode === 'forward') el.contextText.replaceChildren('Forwarding ', strong(mail.subject));
     else if (mode === 'replyAll') el.contextText.replaceChildren('Replying to ', strong('everyone'));
     else el.contextText.replaceChildren('Replying to ', strong(nameOf(mail.from)));
@@ -84,7 +103,7 @@ App.composer = (() => {
       b.setAttribute('aria-checked', String(on));
     });
 
-    el.text.placeholder = !mail ? 'Message'
+    el.text.placeholder = mode === 'new' ? 'Write your email' : !mail ? 'Message'
       : mode === 'forward' ? 'Add a note (optional)'
         : `Message @${nameOf(mode === 'replyAll' ? { name: 'everyone' } : mail.from)}`;
 
@@ -147,7 +166,7 @@ App.composer = (() => {
     el.form.hidden = !open;
     el.bar.hidden = open;
     el.pane.classList.toggle('is-composing', open);
-    el.resume.hidden = !(state && !open && (!isEmpty(state) || state.mode !== 'reply'));
+    el.resume.hidden = !(state && !open && hasDraft(state));
     el.bar.querySelectorAll('button').forEach((b) => { b.disabled = !state; });
   }
 
@@ -162,6 +181,7 @@ App.composer = (() => {
   // Hides the composer. The draft is kept and can be picked up again.
   function hide() {
     if (!state || !state.open) return;
+    if (isNew()) return App.app.showView('inbox'); // the draft is saved on the way out
     fields.to.commit();
     fields.cc.commit();
     fields.bcc.commit();
@@ -185,7 +205,7 @@ App.composer = (() => {
   function sentMessage(entry) {
     const avatar = h('div', { class: 'avatar', 'aria-hidden': 'true' });
     paintAvatar(avatar, myAddress() || 'You');
-    const verb = entry.mode === 'forward' ? 'forwarded to' : 'replied to';
+    const verb = { forward: 'forwarded to', new: 'sent to' }[entry.mode] || 'replied to';
     const files = entry.files.map((f) =>
       h('li', { class: 'chip', title: f.name }, [App.icons.svg('attach'), h('span', { class: 'chip-name', text: f.name }), h('span', { class: 'chip-size', text: formatSize(f.size) })])
     );
@@ -194,7 +214,7 @@ App.composer = (() => {
       h('div', { class: 'msg-main' }, [
         h('div', { class: 'msg-head' }, [
           h('strong', { class: 'msg-author', text: 'You' }),
-          h('span', { class: 'sent-badge' }, [App.icons.svg(entry.mode === 'forward' ? 'forward' : 'reply'), 'Sent']),
+          h('span', { class: 'sent-badge' }, [App.icons.svg({ forward: 'forward', new: 'send' }[entry.mode] || 'reply'), 'Sent']),
           h('time', { class: 'msg-time', title: fullDate(entry.at), text: shortDate(entry.at) })
         ]),
         h('div', { class: 'muted small msg-to', text: `${verb} ${entry.recipients.join(', ')}` }),
@@ -206,7 +226,7 @@ App.composer = (() => {
   }
 
   function renderSent() {
-    const list = (mail && sent.get(mail.uid)) || [];
+    const list = state || mail ? sent.get(keyOf()) || [] : [];
     el.sent.replaceChildren(...list.map(sentMessage));
   }
 
@@ -258,7 +278,7 @@ App.composer = (() => {
   /* ---------------- sending ---------------- */
 
   async function send() {
-    if (!state || !mail || sending) return;
+    if (!state || (!mail && !isNew()) || sending) return;
     fields.to.commit();
     fields.cc.commit();
     fields.bcc.commit();
@@ -270,16 +290,17 @@ App.composer = (() => {
       App.toast.show('Add at least one recipient.', 'error');
       return fields.to.focus();
     }
-    if (state.mode !== 'forward' && isEmpty(state)) {
+    if (state.mode !== 'forward' && isEmpty(state) && !(isNew() && state.subject.trim())) {
       App.toast.show('Write a message first.', 'error');
       return el.text.focus();
     }
 
     const draft = state;
-    const original = mail;
+    const original = mail; // null for a new email
+    const key = keyOf();
     const payload = {
       mode: draft.mode,
-      uid: original.uid,
+      uid: original ? original.uid : undefined,
       to: draft.to.map((r) => r.address),
       cc: draft.cc.map((r) => r.address),
       bcc: draft.bcc.map((r) => r.address),
@@ -300,20 +321,22 @@ App.composer = (() => {
 
     if (!result || !result.ok) return App.toast.show((result && result.error) || 'Could not send it.', 'error');
 
-    App.toast.show(draft.mode === 'forward' ? 'Forwarded' : 'Reply sent', 'ok');
+    App.toast.show({ forward: 'Forwarded', new: 'Sent' }[draft.mode] || 'Reply sent', 'ok');
     const entry = {
       mode: draft.mode,
       recipients: [...draft.to, ...draft.cc, ...draft.bcc].map(nameOf),
       subject: draft.subject,
-      originalSubject: defaultsFor(draft.mode, original).subject,
+      originalSubject: original ? defaultsFor(draft.mode, original).subject : '',
       text: draft.text,
       files: draft.files.map(({ name, size }) => ({ name, size })),
       at: Date.now()
     };
-    sent.set(original.uid, [...(sent.get(original.uid) || []), entry]);
-    drafts.delete(original.uid);
-    if (mail === original) {
-      state = freshDraft('reply'); // starts hidden again
+    sent.set(key, [...(sent.get(key) || []), entry]);
+    drafts.delete(key);
+    if (state === draft) {
+      // A reply box hides again; a new email starts a fresh one, ready to write.
+      state = freshDraft(original ? 'reply' : 'new');
+      state.open = !original;
       renderAll();
       renderOpen();
       renderSent();
@@ -334,15 +357,25 @@ App.composer = (() => {
     renderSent();
   }
 
+  // The Compose button: a new email, or the one you were writing before.
+  function attachNew() {
+    detach();
+    state = drafts.get(NEW) || freshDraft('new');
+    state.open = true;
+    setEnabled(true);
+    renderAll();
+    renderOpen();
+    renderSent();
+    if (!fields.to.get().length) fields.to.focus();
+    else el.text.focus();
+  }
+
   // The reader is moving on: keep a draft if there is one.
   function detach() {
-    if (mail && state) {
+    if (state) {
       capture();
-      if (isEmpty(state) && state.mode === 'reply') {
-        drafts.delete(mail.uid);
-      } else {
-        drafts.set(mail.uid, state);
-      }
+      if (hasDraft(state)) drafts.set(keyOf(), state);
+      else drafts.delete(keyOf());
     }
     mail = null;
     state = null;
@@ -390,6 +423,8 @@ App.composer = (() => {
       send: $('cSend'),
       dropZone: $('dropZone'),
       bar: $('composeBar'),
+      close: $('cClose'),
+      hint: $('cHint'),
       resume: $('cResume'),
       pane: $('readerPane')
     };
@@ -404,7 +439,8 @@ App.composer = (() => {
       send();
     });
     el.text.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter' && !e.shiftKey && !e.isComposing) {
+      const sends = isNew() ? e.ctrlKey || e.metaKey : !e.shiftKey;
+      if (e.key === 'Enter' && sends && !e.isComposing) {
         e.preventDefault();
         send();
       }
@@ -416,7 +452,7 @@ App.composer = (() => {
         hide();
       }
     });
-    $('cClose').addEventListener('click', hide);
+    el.close.addEventListener('click', hide);
     el.resume.addEventListener('click', show);
     el.text.addEventListener('input', autosize);
     el.text.addEventListener('paste', (e) => {
@@ -465,5 +501,8 @@ App.composer = (() => {
     detach();
   }
 
-  return { init, attach, detach, start, show, hide };
+  // For the Compose button's "draft waiting" dot.
+  const hasNewDraft = () => drafts.has(NEW);
+
+  return { init, attach, attachNew, detach, start, show, hide, hasNewDraft };
 })();

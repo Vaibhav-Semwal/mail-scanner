@@ -11,7 +11,7 @@
   background-color: var(--paper);
   border-bottom: 1px solid var(--line);
 }
-.app[data-view="reader"] .pane-head { background-color: var(--panel); }
+.app[data-view="reader"] .pane-head, .app[data-view="compose"] .pane-head { background-color: var(--panel); }
 
 .badge {
   padding: 0 8px;

@@ -34,7 +34,7 @@
   <script src="js/app.js" defer></script>
 </head>
 <body>
-  <!-- data-view: "inbox" | "reader" | "settings" (drives the layout in shell.css) -->
+  <!-- data-view: "inbox" | "reader" | "compose" | "settings" (drives the layout in shell.css) -->
   <div id="app" class="app" data-view="inbox">
 
     <!-- ===== Top bar ===== -->
@@ -51,6 +51,10 @@
 
       <span class="spacer"></span>
 
+      <button id="composeBtn" class="compose-btn" type="button" title="Write a new email (C)">
+        <span data-icon="edit"></span><span class="compose-btn-label">Compose</span>
+        <span id="composeDot" class="compose-dot" title="You have an unsent draft" hidden></span>
+      </button>
       <button id="themeBtn" class="icon-btn" type="button" title="Switch theme" aria-label="Switch theme"></button>
       <button id="scanBtn" class="icon-btn" type="button" title="Check for new mail" aria-label="Check for new mail">
         <span data-icon="refresh"></span>
@@ -115,7 +119,15 @@
 
         <!-- Chat-style thread: the email, then what you sent from here, then the composer. -->
         <div id="rChannel" class="channel">
-          <div class="channel-head">
+          <!-- Shown instead of an email while writing a new one. -->
+          <div class="channel-head new-intro">
+            <span class="new-intro-icon" data-icon="edit"></span>
+            <div>
+              <h1 class="subject">New email</h1>
+              <p class="muted small">Write to anyone. Emails you send from here show up below.</p>
+            </div>
+          </div>
+          <div class="channel-head mail-head">
             <h1 id="rSubject" class="subject"></h1>
             <div id="rLabels" class="reader-labels" hidden></div>
             <div id="rSpamBanner" class="spam-banner" role="note" hidden>
@@ -217,7 +229,7 @@
               </button>
             </div>
           </div>
-          <p class="composer-hint"><kbd>Enter</kbd> to send · <kbd>Shift</kbd>+<kbd>Enter</kbd> new line · <kbd>Esc</kbd> to hide · drop or paste files to attach</p>
+          <p id="cHint" class="composer-hint"><kbd>Enter</kbd> to send · <kbd>Shift</kbd>+<kbd>Enter</kbd> new line · <kbd>Esc</kbd> to hide · drop or paste files to attach</p>
         </form>
 
         <div id="dropZone" class="drop-zone" hidden>

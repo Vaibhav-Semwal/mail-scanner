@@ -217,7 +217,7 @@ kbd { padding: 0 4px; font: inherit; font-weight: 600; background: var(--hover);
 }
 
 /* While reading, toasts sit at the top so they never cover the composer. */
-.app[data-view="reader"] .toast { top: 66px; bottom: auto; }
+.app[data-view="reader"] .toast, .app[data-view="compose"] .toast { top: 66px; bottom: auto; }
 
 /* ---------- Collapsed composer: a slim bar of buttons ---------- */
 .compose-bar {
@@ -254,3 +254,54 @@ button.composer-close .icon { width: 18px; height: 18px; }
   button.compose-open span:last-child { display: none; }
   button.compose-open { padding: 8px; }
 }
+
+/* ---------- Compose button (top bar) ---------- */
+button.compose-btn {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-right: 6px;
+  padding: 7px 16px 7px 12px;
+  color: var(--accent-ink);
+  font-weight: 650;
+  background: var(--accent);
+  border: 0;
+  border-radius: 18px;
+}
+button.compose-btn:hover:not(:disabled), button.compose-btn.is-active { background: var(--accent); filter: brightness(1.08); }
+button.compose-btn .icon { width: 18px; height: 18px; }
+.compose-dot {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  width: 10px;
+  height: 10px;
+  background: var(--warn);
+  border: 2px solid var(--panel);
+  border-radius: 50%;
+}
+@media (max-width: 560px) {
+  .compose-btn-label { display: none; }
+  button.compose-btn { padding: 8px; }
+}
+
+/* ---------- Compose view: the reader pane without an email ---------- */
+.new-intro { display: none; }
+.app[data-view="compose"] .new-intro { display: flex; align-items: center; gap: 14px; padding-left: 20px; }
+.new-intro-icon { display: grid; place-items: center; flex: none; width: 40px; height: 40px; color: var(--accent-ink); background: var(--accent); border-radius: 50%; }
+.new-intro-icon .icon { width: 20px; height: 20px; }
+.new-intro .subject { margin: 0; }
+.new-intro p { margin: 0; }
+.app[data-view="compose"] .mail-head,
+.app[data-view="compose"] .msg-mail,
+.app[data-view="compose"] .compose-bar,
+.app[data-view="compose"] .toolbar .tool:not(#rBack) { display: none; }
+/* With no email above it, the composer takes the free space for writing. */
+.app[data-view="compose"] .channel { flex: 0 1 auto; }
+.app[data-view="compose"] .composer { display: flex; flex: 1 1 auto; flex-direction: column; min-height: 300px; padding-top: 8px; }
+.app[data-view="compose"] .composer[hidden] { display: none; }
+.app[data-view="compose"] .composer-box { display: flex; flex: 1 1 auto; flex-direction: column; min-height: 0; }
+.app[data-view="compose"] .composer-input { flex: 1 1 auto; align-items: stretch; }
+.app[data-view="compose"] .composer-input textarea { max-height: none; height: auto !important; }
+.app[data-view="compose"] .composer-input .composer-btn { align-self: flex-end; }

@@ -35,7 +35,7 @@
   padding: 10px 16px 0;
 }
 .app[data-view="inbox"] .filter-bar { max-width: 860px; margin-inline: auto; }
-.app[data-view="reader"] .filter-bar { padding-bottom: 10px; border-bottom: 1px solid var(--line); }
+.app[data-view="reader"] .filter-bar, .app[data-view="compose"] .filter-bar { padding-bottom: 10px; border-bottom: 1px solid var(--line); }
 
 .filter-chip {
   --label: var(--accent);

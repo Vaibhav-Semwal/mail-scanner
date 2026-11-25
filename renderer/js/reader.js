@@ -149,6 +149,14 @@ App.reader = (() => {
     setButtons(current);
   }
 
+  // The Compose button: the reader pane, without an email, holding a new one.
+  function newMessage() {
+    token++;
+    reset();
+    App.store.setUi({ view: 'compose', selected: null });
+    App.composer.attachNew();
+  }
+
   function close() {
     token++;
     reset();
@@ -225,5 +233,5 @@ App.reader = (() => {
     if (current) App.composer.start(mode);
   };
 
-  return { init, open, close, step, act, toggleStar, compose };
+  return { init, open, close, step, act, toggleStar, compose, newMessage };
 })();

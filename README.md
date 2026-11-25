@@ -23,6 +23,8 @@ Output is in `dist/`:
   IMAP must be enabled on the mailbox.
 - Your app password is encrypted with the OS keyring via Electron `safeStorage`.
 - The app reads sender and subject only. It does not download message bodies or mark mail as read.
+- Write a new email with the Compose button in the top bar (or press C). Ctrl+Enter sends it; Esc
+  closes it and keeps the draft (a dot on Compose shows one is waiting).
 - Reply, Reply all and Forward from the open email (or press R / A / F). The composer stays hidden
   until you click one of those buttons, and Esc or the X hides it again while keeping your draft.
   It works like a chat box: Enter sends, Shift+Enter adds a new line. Add Cc, Bcc and a subject. Attach images or

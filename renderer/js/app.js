@@ -5,10 +5,11 @@ App.app = (() => {
   const { $, withBusy, shortDate } = App.dom;
   const root = $('app');
 
-  // view: 'inbox' | 'reader' | 'settings'. Opening the reader goes through App.reader.open.
+  // view: 'inbox' | 'reader' | 'compose' | 'settings'. Opening the reader goes
+  // through App.reader.open, a new email through App.reader.newMessage.
   function showView(view) {
-    if (view === 'reader') return;
-    if (App.store.ui.view === 'reader') App.reader.close();
+    if (view === 'reader' || view === 'compose') return;
+    if (App.store.ui.view === 'reader' || App.store.ui.view === 'compose') App.reader.close();
     App.store.setUi({ view, selected: null });
   }
 
@@ -22,6 +23,8 @@ App.app = (() => {
     $('statusPill').title = lastScan ? `${status}. Last checked ${shortDate(lastScan)}.` : status;
     $('gmailBtn').hidden = !canOpen;
     $('navSettings').classList.toggle('is-active', store.ui.view === 'settings');
+    $('composeBtn').classList.toggle('is-active', store.ui.view === 'compose');
+    $('composeDot').hidden = store.ui.view === 'compose' || !App.composer.hasNewDraft();
   }
 
   const isTyping = (target) => target && (target.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(target.tagName));
@@ -37,6 +40,11 @@ App.app = (() => {
       return;
     }
     if (view === 'settings') return;
+    if (e.key === 'c' && view !== 'compose') {
+      e.preventDefault(); // don't type the "c" into the To field it focuses
+      App.reader.newMessage();
+      return;
+    }
 
     const down = e.key === 'ArrowDown' || e.key === 'j';
     const up = e.key === 'ArrowUp' || e.key === 'k';
@@ -88,6 +96,7 @@ App.app = (() => {
     $('navSettings').addEventListener('click', () =>
       showView(App.store.ui.view === 'settings' ? 'inbox' : 'settings')
     );
+    $('composeBtn').addEventListener('click', () => App.reader.newMessage());
     $('gmailBtn').addEventListener('click', () => App.actions.openInBrowser(null));
     $('scanBtn').addEventListener('click', (e) => {
       const btn = e.currentTarget;

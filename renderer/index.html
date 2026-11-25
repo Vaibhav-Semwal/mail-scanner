@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; frame-src mail-view:">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; frame-src mail-view:">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>MailTag</title>
 
@@ -10,6 +10,7 @@
   <link rel="stylesheet" href="styles/shell.css">
   <link rel="stylesheet" href="styles/inbox.css">
   <link rel="stylesheet" href="styles/reader.css">
+  <link rel="stylesheet" href="styles/composer.css">
   <link rel="stylesheet" href="styles/settings.css">
   <link rel="stylesheet" href="styles/labels.css">
 
@@ -24,6 +25,8 @@
   <script src="js/actions.js" defer></script>
   <script src="js/labels.js" defer></script>
   <script src="js/inbox.js" defer></script>
+  <script src="js/recipients.js" defer></script>
+  <script src="js/composer.js" defer></script>
   <script src="js/reader.js" defer></script>
   <script src="js/settings.js" defer></script>
   <script src="js/smart-labels.js" defer></script>
@@ -87,6 +90,12 @@
             <span data-icon="back"></span><span class="tool-label">Inbox</span>
           </button>
           <span class="spacer"></span>
+          <button id="rReply" type="button" class="tool" title="Reply (R)" data-compose="reply">
+            <span data-icon="reply"></span><span class="tool-label">Reply</span>
+          </button>
+          <button id="rForward" type="button" class="tool" title="Forward (F)" data-compose="forward">
+            <span data-icon="forward"></span><span class="tool-label">Forward</span>
+          </button>
           <button id="rOpen" type="button" class="tool" title="Open in browser">
             <span data-icon="external"></span><span class="tool-label">Open in browser</span>
           </button>
@@ -104,29 +113,116 @@
           </button>
         </div>
 
-        <article class="message">
-          <h1 id="rSubject" class="subject"></h1>
-          <div id="rLabels" class="reader-labels" hidden></div>
-          <div id="rSpamBanner" class="spam-banner" role="note" hidden>
-            <strong>This looks like spam.</strong> The local AI flagged it. Be careful with links, attachments and requests for personal details.
-          </div>
-          <div class="sender">
-            <div id="rAvatar" class="avatar" aria-hidden="true"></div>
-            <div class="who">
-              <div class="who-line">
-                <strong id="rFromName"></strong>
-                <span id="rFromAddr" class="muted small"></span>
-              </div>
-              <div id="rTo" class="muted small"></div>
+        <!-- Chat-style thread: the email, then what you sent from here, then the composer. -->
+        <div id="rChannel" class="channel">
+          <div class="channel-head">
+            <h1 id="rSubject" class="subject"></h1>
+            <div id="rLabels" class="reader-labels" hidden></div>
+            <div id="rSpamBanner" class="spam-banner" role="note" hidden>
+              <strong>This looks like spam.</strong> The local AI flagged it. Be careful with links, attachments and requests for personal details.
             </div>
-            <time id="rDate" class="muted small"></time>
           </div>
-          <ul id="rAttachments" class="attachments" hidden></ul>
-          <div id="rLoading" class="loading" hidden><span class="spinner" aria-hidden="true"></span> Loading email…</div>
-          <div id="rError" class="reader-error" hidden></div>
-          <iframe id="rBody" class="body-frame" title="Email content" hidden
-                  sandbox="allow-popups allow-popups-to-escape-sandbox" referrerpolicy="no-referrer"></iframe>
-        </article>
+
+          <article class="msg msg-mail">
+            <div id="rAvatar" class="avatar" aria-hidden="true"></div>
+            <div class="msg-main">
+              <div class="msg-head">
+                <strong id="rFromName" class="msg-author"></strong>
+                <span id="rFromAddr" class="muted small"></span>
+                <time id="rDate" class="msg-time"></time>
+              </div>
+              <div id="rTo" class="muted small msg-to"></div>
+              <ul id="rAttachments" class="attachments" hidden></ul>
+              <div id="rLoading" class="loading" hidden><span class="spinner" aria-hidden="true"></span> Loading email…</div>
+              <div id="rError" class="reader-error" hidden></div>
+              <iframe id="rBody" class="body-frame" title="Email content" hidden
+                      sandbox="allow-popups allow-popups-to-escape-sandbox" referrerpolicy="no-referrer"></iframe>
+            </div>
+            <!-- Hover actions, like a chat app's message menu. -->
+            <div class="msg-actions" role="toolbar" aria-label="Respond">
+              <button type="button" class="msg-action" data-compose="reply" title="Reply (R)" aria-label="Reply"><span data-icon="reply"></span></button>
+              <button type="button" class="msg-action" data-compose="replyAll" title="Reply all (A)" aria-label="Reply all"><span data-icon="replyAll"></span></button>
+              <button type="button" class="msg-action" data-compose="forward" title="Forward (F)" aria-label="Forward"><span data-icon="forward"></span></button>
+            </div>
+          </article>
+
+          <div id="rSent" class="sent-list" aria-live="polite"></div>
+        </div>
+
+        <!-- ===== Composer: hidden until you choose to reply or forward ===== -->
+        <div id="composeBar" class="compose-bar" role="toolbar" aria-label="Respond">
+          <button id="cResume" type="button" class="compose-open is-draft" hidden>
+            <span data-icon="edit"></span><span>Continue draft</span>
+          </button>
+          <button type="button" class="compose-open" data-compose="reply" title="Reply (R)">
+            <span data-icon="reply"></span><span>Reply</span>
+          </button>
+          <button type="button" class="compose-open" data-compose="replyAll" title="Reply all (A)">
+            <span data-icon="replyAll"></span><span>Reply all</span>
+          </button>
+          <button type="button" class="compose-open" data-compose="forward" title="Forward (F)">
+            <span data-icon="forward"></span><span>Forward</span>
+          </button>
+        </div>
+
+        <form id="composer" class="composer" autocomplete="off" novalidate hidden>
+          <div class="composer-context">
+            <span id="cModeIcon" class="context-icon"></span>
+            <span id="cContextText" class="context-text"></span>
+            <span class="spacer"></span>
+            <div id="cModes" class="mode-pills" role="radiogroup" aria-label="Respond with">
+              <button type="button" class="mode-pill" data-mode="reply" role="radio">Reply</button>
+              <button type="button" class="mode-pill" data-mode="replyAll" role="radio">Reply all</button>
+              <button type="button" class="mode-pill" data-mode="forward" role="radio">Forward</button>
+            </div>
+            <button id="cClose" type="button" class="composer-close" title="Hide (Esc). Your draft is kept." aria-label="Hide composer">
+              <span data-icon="close"></span>
+            </button>
+          </div>
+
+          <div id="cBox" class="composer-box">
+            <div class="cfields">
+              <div class="cfield">
+                <label class="cfield-label" for="cToInput">To</label>
+                <div id="cTo" class="recipients"></div>
+                <button id="cCcToggle" type="button" class="cfield-toggle" title="Add Cc">Cc</button>
+                <button id="cBccToggle" type="button" class="cfield-toggle" title="Add Bcc">Bcc</button>
+              </div>
+              <div id="cCcRow" class="cfield" hidden>
+                <label class="cfield-label" for="cCcInput">Cc</label>
+                <div id="cCc" class="recipients"></div>
+              </div>
+              <div id="cBccRow" class="cfield" hidden>
+                <label class="cfield-label" for="cBccInput">Bcc</label>
+                <div id="cBcc" class="recipients"></div>
+              </div>
+              <div class="cfield">
+                <label class="cfield-label" for="cSubject">Subject</label>
+                <input id="cSubject" class="cfield-input" type="text" maxlength="900">
+              </div>
+            </div>
+
+            <ul id="cUploads" class="uploads" hidden></ul>
+            <label id="cOrigRow" class="orig-row" hidden>
+              <input id="cOrig" type="checkbox" checked> <span id="cOrigText">Include the original attachments</span>
+            </label>
+
+            <div class="composer-input">
+              <button id="cAttach" type="button" class="composer-btn attach-btn" title="Attach images or documents" aria-label="Attach files">
+                <span data-icon="plus"></span>
+              </button>
+              <textarea id="cText" rows="1" placeholder="Message"></textarea>
+              <button id="cSend" type="submit" class="composer-btn send-btn" title="Send (Enter)" aria-label="Send">
+                <span data-icon="send"></span>
+              </button>
+            </div>
+          </div>
+          <p class="composer-hint"><kbd>Enter</kbd> to send · <kbd>Shift</kbd>+<kbd>Enter</kbd> new line · <kbd>Esc</kbd> to hide · drop or paste files to attach</p>
+        </form>
+
+        <div id="dropZone" class="drop-zone" hidden>
+          <div class="drop-card"><span data-icon="attach"></span><strong>Drop to attach</strong><span class="muted">Images and documents</span></div>
+        </div>
       </section>
 
       <!-- ===== Settings ===== -->
@@ -162,6 +258,15 @@
                   <input id="port" type="number" min="1" max="65535">
                 </label>
               </div>
+              <div class="row">
+                <label class="field">Outgoing (SMTP) server
+                  <input id="smtpHost" type="text" placeholder="Detected from your address">
+                </label>
+                <label class="field">Port
+                  <input id="smtpPort" type="number" min="1" max="65535" placeholder="Auto">
+                </label>
+              </div>
+              <small class="muted">Used to send replies and forwards. 465 uses TLS; 587 uses STARTTLS.</small>
             </details>
           </div>
 

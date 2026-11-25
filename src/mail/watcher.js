@@ -138,6 +138,22 @@ class MailWatcher extends EventEmitter {
     this.#refreshSoon(); // re-sorts the list; an unstarred email may fall outside the limit
   }
 
+  // Adds one flag (e.g. \Answered after a reply) without touching the list.
+  async addFlag(uid, flag) {
+    await this.#enqueue(async () => {
+      await this.#usableClient().messageFlagsAdd(String(uid), [flag], { uid: true });
+    });
+  }
+
+  // Files a copy of an email we sent in the \Sent folder (for servers that
+  // don't do it themselves). Does nothing if the mailbox has no such folder.
+  async saveToSent(raw) {
+    await this.#enqueue(async () => {
+      const path = await this.#findFolder('\\Sent');
+      if (path) await this.#usableClient().append(path, raw, ['\\Seen']);
+    });
+  }
+
   // After an email leaves the unread list (read, archived, deleted), the next
   // unread one beyond the list limit moves up into it. Re-reading the list now,
   // instead of at the next poll, sends it to the window and to the classifier

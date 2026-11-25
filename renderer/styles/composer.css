@@ -1,0 +1,256 @@
+/* ---------- Sent messages in the thread ---------- */
+.sent-list { display: flex; flex-direction: column; }
+.msg-sent { animation: msg-in 0.18s ease-out; }
+@keyframes msg-in { from { opacity: 0; transform: translateY(6px); } }
+
+.sent-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 0 7px 0 5px;
+  color: var(--accent-ink);
+  background: var(--accent);
+  border-radius: 4px;
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 16px;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+.sent-badge .icon { width: 12px; height: 12px; }
+.sent-subject { margin-bottom: 2px; font-weight: 600; overflow-wrap: anywhere; }
+.sent-text { margin-bottom: 6px; white-space: pre-wrap; overflow-wrap: anywhere; }
+
+/* ---------- Composer, pinned under the thread ---------- */
+.composer { flex: none; padding: 0 16px 6px; }
+.composer.is-disabled { opacity: 0.6; }
+
+/* "Replying to Ada" strip, joined to the top of the box. */
+.composer-context {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 36px;
+  padding: 4px 6px 4px 12px;
+  color: var(--muted);
+  font-size: 13px;
+  background: color-mix(in srgb, var(--hover) 60%, var(--paper));
+  border: 1px solid var(--line);
+  border-bottom: 0;
+  border-radius: 10px 10px 0 0;
+}
+.context-icon { display: inline-grid; color: var(--accent); }
+.context-icon .icon { width: 16px; height: 16px; }
+.context-text { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.context-text strong { color: var(--ink); }
+
+.mode-pills { display: flex; flex: none; gap: 2px; }
+button.mode-pill {
+  padding: 2px 10px;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 600;
+  background: none;
+  border: 0;
+  border-radius: 12px;
+}
+button.mode-pill.is-picked, button.mode-pill.is-picked:hover:not(:disabled) { color: var(--accent-ink); background: var(--accent); }
+
+.composer-box {
+  background: var(--hover);
+  border: 1px solid var(--line);
+  border-radius: 0 0 10px 10px;
+}
+.composer-box:focus-within { border-color: color-mix(in srgb, var(--accent) 55%, var(--line)); }
+
+/* To / Cc / Bcc / Subject lines. */
+.cfields { padding: 2px 0; }
+.cfield {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 34px;
+  padding: 2px 10px 2px 14px;
+  border-bottom: 1px solid color-mix(in srgb, var(--line) 70%, transparent);
+}
+.cfield-label { flex: none; width: 52px; color: var(--muted); font-size: 12px; font-weight: 650; text-transform: uppercase; letter-spacing: 0.04em; }
+.cfield-input, .recipient-input {
+  flex: 1 1 auto;
+  min-width: 80px;
+  padding: 4px 0;
+  color: var(--ink);
+  font: inherit;
+  background: none;
+  border: 0;
+  outline: none;
+}
+button.cfield-toggle {
+  flex: none;
+  padding: 2px 8px;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 600;
+  background: none;
+  border: 0;
+  border-radius: 6px;
+}
+button.cfield-toggle:hover:not(:disabled) { color: var(--ink); background: var(--panel); }
+
+/* Recipient chips, like @mentions. */
+.recipients { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; flex: 1 1 auto; min-width: 0; cursor: text; }
+.rchip {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  max-width: 100%;
+  padding: 0 2px 0 8px;
+  color: var(--accent);
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 22px;
+  background: var(--accent-soft);
+  border-radius: 11px;
+}
+.rchip.is-invalid { color: var(--bad); background: var(--bad-soft); text-decoration: wavy underline; }
+.rchip-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+button.rchip-x { display: grid; place-items: center; width: 18px; height: 18px; padding: 0; color: inherit; background: none; border: 0; border-radius: 50%; }
+button.rchip-x:hover:not(:disabled) { background: color-mix(in srgb, currentColor 18%, transparent); }
+button.rchip-x .icon { width: 12px; height: 12px; }
+
+/* Attachment tiles, like a chat app's upload previews. */
+.uploads { display: flex; gap: 10px; margin: 0; padding: 12px 14px 4px; overflow-x: auto; list-style: none; }
+.upload {
+  position: relative;
+  display: flex;
+  flex: none;
+  flex-direction: column;
+  width: 156px;
+  padding: 8px;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+}
+.upload-thumb, .upload-icon { width: 100%; height: 96px; border-radius: 5px; }
+.upload-thumb { object-fit: cover; background: var(--paper); }
+.upload-icon { display: grid; place-items: center; color: var(--accent); background: var(--accent-soft); }
+.upload-icon .icon { width: 40px; height: 40px; }
+.upload-meta { display: flex; flex-direction: column; margin-top: 6px; min-width: 0; }
+.upload-name { overflow: hidden; font-size: 12px; font-weight: 600; text-overflow: ellipsis; white-space: nowrap; }
+.upload-size { color: var(--muted); font-size: 11px; }
+button.upload-x {
+  position: absolute;
+  top: -8px;
+  right: -8px;
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  color: var(--bad);
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  box-shadow: var(--shadow);
+  opacity: 0;
+}
+.upload:hover button.upload-x, button.upload-x:focus-visible { opacity: 1; }
+button.upload-x .icon { width: 16px; height: 16px; }
+
+.orig-row { display: flex; align-items: center; gap: 6px; padding: 6px 14px 0; color: var(--muted); font-size: 12px; cursor: pointer; }
+
+/* The message line: (+) · text · send. */
+.composer-input { display: flex; align-items: flex-end; gap: 4px; padding: 6px 8px; }
+.composer-input textarea {
+  flex: 1 1 auto;
+  min-height: 34px;
+  max-height: 240px;
+  padding: 7px 4px;
+  color: var(--ink);
+  font: inherit;
+  line-height: 20px;
+  background: none;
+  border: 0;
+  outline: none;
+  resize: none;
+}
+button.composer-btn { display: grid; place-items: center; flex: none; width: 34px; height: 34px; padding: 0; color: var(--muted); background: none; border: 0; border-radius: 50%; }
+button.composer-btn:hover:not(:disabled) { color: var(--ink); background: var(--panel); }
+button.composer-btn .icon { width: 24px; height: 24px; }
+button.send-btn { color: var(--accent); }
+button.send-btn .icon { width: 20px; height: 20px; }
+button.send-btn:hover:not(:disabled) { color: var(--accent-ink); background: var(--accent); }
+.composer.is-sending .send-btn .icon { animation: send-pulse 0.8s ease-in-out infinite alternate; }
+@keyframes send-pulse { to { opacity: 0.3; transform: translateX(3px); } }
+
+.composer-hint { margin: 4px 4px 0; color: var(--muted); font-size: 11px; }
+kbd { padding: 0 4px; font: inherit; font-weight: 600; background: var(--hover); border: 1px solid var(--line); border-radius: 3px; }
+
+/* Full-pane overlay while dragging files in. */
+.drop-zone {
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  display: grid;
+  place-items: center;
+  background: color-mix(in srgb, var(--accent) 22%, transparent);
+}
+.drop-zone * { pointer-events: none; } /* dragleave fires only when leaving the overlay */
+.drop-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 28px 44px;
+  color: var(--ink);
+  background: var(--panel);
+  border: 2px dashed var(--accent);
+  border-radius: 14px;
+  box-shadow: var(--shadow);
+}
+.drop-card .icon { width: 40px; height: 40px; color: var(--accent); }
+.drop-card strong { font-size: 18px; }
+
+@media (max-width: 560px) {
+  .composer { padding-inline: 8px; }
+  .mode-pills button.mode-pill { padding-inline: 6px; }
+  .composer-hint { display: none; }
+}
+
+/* While reading, toasts sit at the top so they never cover the composer. */
+.app[data-view="reader"] .toast { top: 66px; bottom: auto; }
+
+/* ---------- Collapsed composer: a slim bar of buttons ---------- */
+.compose-bar {
+  display: flex;
+  flex: none;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 10px 16px 12px;
+  border-top: 1px solid var(--line);
+}
+button.compose-open {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 16px 7px 12px;
+  color: var(--ink);
+  font-size: 13px;
+  font-weight: 600;
+  background: var(--hover);
+  border: 1px solid var(--line);
+  border-radius: 18px;
+}
+button.compose-open .icon { width: 18px; height: 18px; color: var(--muted); }
+button.compose-open:hover:not(:disabled) { color: var(--accent-ink); background: var(--accent); border-color: var(--accent); }
+button.compose-open:hover:not(:disabled) .icon { color: inherit; }
+button.compose-open.is-draft { color: var(--accent); border-color: color-mix(in srgb, var(--accent) 55%, var(--line)); background: var(--accent-soft); }
+button.compose-open.is-draft .icon { color: inherit; }
+
+button.composer-close { display: grid; place-items: center; flex: none; width: 28px; height: 28px; padding: 0; margin-left: 2px; color: var(--muted); background: none; border: 0; border-radius: 6px; }
+button.composer-close:hover:not(:disabled) { color: var(--ink); background: var(--panel); }
+button.composer-close .icon { width: 18px; height: 18px; }
+
+@media (max-width: 560px) {
+  button.compose-open span:last-child { display: none; }
+  button.compose-open { padding: 8px; }
+}

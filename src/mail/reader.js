@@ -63,6 +63,7 @@ async function loadMessage({ watcher, uid }) {
         uid,
         subject: parsed.subject || '(no subject)',
         from: addresses(parsed.from)[0] || { name: 'Unknown sender', address: '' },
+        replyTo: addresses(parsed.replyTo),
         to: addresses(parsed.to),
         cc: addresses(parsed.cc),
         date: parsed.date ? +parsed.date : null,

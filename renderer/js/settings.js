@@ -16,6 +16,8 @@ App.settings = (() => {
       password: el.password.value,
       host: el.host.value.trim(),
       port: Number(el.port.value) || DEFAULT_PORT,
+      smtpHost: el.smtpHost.value.trim(),
+      smtpPort: Number(el.smtpPort.value) || 0,
       intervalMin: Math.max(1, Number(el.interval.value) || DEFAULT_INTERVAL_MIN),
       maxEmails: Math.min(MAX_EMAILS, Math.max(1, Math.round(Number(el.maxEmails.value)) || DEFAULT_MAX_EMAILS)),
       keywords: el.keywords.value.trim(),
@@ -30,6 +32,8 @@ App.settings = (() => {
     el.password.placeholder = config.hasPassword ? PASSWORD_SAVED_HINT : 'App password';
     el.host.value = config.host;
     el.port.value = config.port;
+    el.smtpHost.value = config.smtpHost || '';
+    el.smtpPort.value = config.smtpPort || '';
     el.interval.value = config.intervalMin;
     el.maxEmails.value = config.maxEmails;
     el.keywords.value = config.keywords;
@@ -37,7 +41,7 @@ App.settings = (() => {
     el.launch.checked = config.launchAtLogin;
     el.banner.hidden = Boolean(config.email && config.hasPassword);
     // Custom server settings stay visible; otherwise they're tucked away.
-    el.advanced.open = Boolean(config.host);
+    el.advanced.open = Boolean(config.host || config.smtpHost || config.smtpPort);
   }
 
   async function save() {
@@ -57,7 +61,7 @@ App.settings = (() => {
     if (!form.email) return App.toast.show('Enter your email address.', 'error');
     App.toast.show('Connecting…');
     const result = await withBusy(el.test, () => api.testConnection(form));
-    if (result.ok) App.toast.show('Connected. Your email and app password work.', 'ok');
+    if (result.ok) App.toast.show('Connected. Receiving and sending both work.', 'ok');
     else App.toast.show(`Could not connect: ${result.error}`, 'error');
   }
 
@@ -67,6 +71,8 @@ App.settings = (() => {
       password: $('password'),
       host: $('host'),
       port: $('port'),
+      smtpHost: $('smtpHost'),
+      smtpPort: $('smtpPort'),
       interval: $('interval'),
       maxEmails: $('maxEmails'),
       keywords: $('keywords'),

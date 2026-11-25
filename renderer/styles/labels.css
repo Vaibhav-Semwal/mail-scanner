@@ -57,7 +57,7 @@
 .filter-count { color: var(--muted); font-weight: 500; }
 
 /* ---------- Reader ---------- */
-.reader-labels { display: flex; flex-wrap: wrap; gap: 6px; margin: -6px 0 14px 52px; }
+.reader-labels { display: flex; flex-wrap: wrap; gap: 6px; margin: 2px 0 6px; }
 
 .spam-meter {
   display: inline-flex;
@@ -75,7 +75,7 @@
 .spam-meter.is-pending { color: var(--muted); background: var(--hover); }
 
 .spam-banner {
-  margin: 0 0 14px 52px;
+  margin: 6px 0 6px;
   padding: 10px 14px;
   color: var(--ink);
   background: var(--bad-soft);

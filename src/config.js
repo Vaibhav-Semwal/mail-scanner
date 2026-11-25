@@ -8,6 +8,8 @@ const DEFAULTS = {
   email: '',
   host: '',
   port: 993,
+  smtpHost: '', // empty = picked from the address (src/mail/smtp.js)
+  smtpPort: 0,  // 0 = automatic
   intervalMin: 10,
   maxEmails: 20, // unread emails listed (starred ones are shown on top of this)
   keywords: '',
@@ -26,6 +28,8 @@ function sanitize(input) {
     password: String(input.password || ''),
     host: String(input.host || '').trim(),
     port: clamp(input.port, 1, 65535, DEFAULTS.port),
+    smtpHost: String(input.smtpHost || '').trim(),
+    smtpPort: clamp(input.smtpPort, 0, 65535, DEFAULTS.smtpPort),
     intervalMin: clamp(input.intervalMin, 1, 1440, DEFAULTS.intervalMin),
     maxEmails: clamp(input.maxEmails, 1, MAX_EMAILS, DEFAULTS.maxEmails),
     keywords: String(input.keywords || '').trim(),

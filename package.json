@@ -12,7 +12,8 @@
   },
   "dependencies": {
     "imapflow": "2.9.1",
-    "mailparser": "3.7.1"
+    "mailparser": "3.7.1",
+    "nodemailer": "10.6.1"
   },
   "devDependencies": {
     "electron": "45.0.0",

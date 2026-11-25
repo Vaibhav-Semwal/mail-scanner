@@ -48,6 +48,10 @@ App.app = (() => {
       else if (e.key === '#' || e.key === 'Delete') App.reader.act('trash');
       else if (e.key === 'i') App.reader.act('read');
       else if (e.key === 's') App.reader.toggleStar();
+      else if (e.key === 'r' || e.key === 'a' || e.key === 'f') {
+        e.preventDefault(); // don't type the letter into the composer it focuses
+        App.reader.compose({ r: 'reply', a: 'replyAll', f: 'forward' }[e.key]);
+      }
       return;
     }
     // Inbox view: S stars the focused row.
@@ -69,6 +73,7 @@ App.app = (() => {
   async function init() {
     App.icons.mount();
     App.inbox.init();
+    App.composer.init();
     App.reader.init();
     App.settings.init();
     App.smartLabels.init();

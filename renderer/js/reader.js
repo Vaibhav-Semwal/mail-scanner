@@ -1,6 +1,7 @@
 'use strict';
 
-// Shows one email: toolbar, Gmail-style header and the sandboxed body frame.
+// Shows one email as a chat-style thread: toolbar, the message (sender, time,
+// sandboxed body frame) and the composer below it (see composer.js).
 // The body is served by the main process at mail-view://msg/<uid>; this window
 // never handles the email's HTML itself.
 App.reader = (() => {
@@ -15,6 +16,8 @@ App.reader = (() => {
     el.archive.disabled = !mail || !mail.canArchive;
     el.trash.disabled = !mail || !mail.canDelete;
     el.read.disabled = !mail;
+    el.reply.disabled = !mail;
+    el.forward.disabled = !mail;
     el.open.hidden = !App.store.mail.canOpen;
     renderStar();
   }
@@ -78,6 +81,8 @@ App.reader = (() => {
     el.loading.hidden = true;
     el.body.hidden = true;
     el.body.removeAttribute('src');
+    el.channel.scrollTop = 0;
+    App.composer.detach();
     setButtons(null);
   }
 
@@ -119,6 +124,7 @@ App.reader = (() => {
 
     el.body.src = `mail-view://msg/${mail.uid}`;
     el.body.hidden = false;
+    App.composer.attach(mail);
   }
 
   async function open(uid) {
@@ -172,6 +178,9 @@ App.reader = (() => {
       archive: $('rArchive'),
       trash: $('rDelete'),
       read: $('rRead'),
+      reply: $('rReply'),
+      forward: $('rForward'),
+      channel: $('rChannel'),
       star: $('rStar'),
       starIcon: document.querySelector('#rStar .star-icon'),
       starLabel: document.querySelector('#rStar .tool-label'),
@@ -197,6 +206,11 @@ App.reader = (() => {
     el.trash.addEventListener('click', () => act('trash'));
     el.read.addEventListener('click', () => act('read'));
     el.star.addEventListener('click', toggleStar);
+    // Reply / Reply all / Forward, from the toolbar or the message's hover menu.
+    $('readerPane').addEventListener('click', (e) => {
+      const btn = e.target.closest('[data-compose]');
+      if (btn && current) App.composer.start(btn.dataset.compose);
+    });
 
     App.store.on((store, changed) => {
       if (changed === 'mail') el.open.hidden = !store.mail.canOpen;
@@ -207,5 +221,9 @@ App.reader = (() => {
     });
   }
 
-  return { init, open, close, step, act, toggleStar };
+  const compose = (mode) => {
+    if (current) App.composer.start(mode);
+  };
+
+  return { init, open, close, step, act, toggleStar, compose };
 })();

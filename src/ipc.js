@@ -8,6 +8,9 @@ const { markAsRead } = require('./mail/markRead');
 const { setStar } = require('./mail/star');
 const { loadMessage, archiveMessage, deleteMessage } = require('./mail/reader');
 const aiConfig = require('./ai/aiConfig');
+const { testSmtp, resolveSmtp } = require('./mail/smtp');
+const { sendMail } = require('./mail/sender');
+const outbox = require('./mail/outbox');
 
 // Connects the settings window to the main process.
 function registerIpc({ watcher, classifier }) {
@@ -47,9 +50,15 @@ function registerIpc({ watcher, classifier }) {
     const cfg = config.merge(config.load(), data || {});
     try {
       await testConnection(cfg);
-      return { ok: true };
     } catch (err) {
       return { ok: false, error: describeError(err, cfg) };
+    }
+    try {
+      await testSmtp(cfg); // sending (replies, forwards) uses the same app password
+      return { ok: true };
+    } catch (err) {
+      const { host, port } = resolveSmtp(cfg);
+      return { ok: false, error: `Receiving works, but sending through ${host}:${port} failed: ${err.response || err.message || err.code}` };
     }
   });
 
@@ -77,6 +86,12 @@ function registerIpc({ watcher, classifier }) {
   ipcMain.handle('mail:get', (_event, uid) => loadMessage({ watcher, uid }));
   ipcMain.handle('mail:archive', (_event, uid) => archiveMessage({ watcher, uid, silent: true }));
   ipcMain.handle('mail:trash', (_event, uid) => deleteMessage({ watcher, uid, silent: true }));
+
+  // Composer: attachments and sending.
+  ipcMain.handle('compose:pick', () => outbox.pick());
+  ipcMain.handle('compose:addData', (_event, name, type, bytes) => outbox.addData(name, type, bytes));
+  ipcMain.handle('compose:discard', (_event, ids) => outbox.discard(ids));
+  ipcMain.handle('mail:send', (_event, draft) => sendMail({ watcher, draft }));
 
   ipcMain.handle('scan:now', () => watcher.refresh());
   ipcMain.handle('state:get', () => session.get());
